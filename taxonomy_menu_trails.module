@@ -15,7 +15,7 @@
  */
 function taxonomy_menu_trails_init() {
   $item = menu_get_item();
-  if ($item['page_callback'] == 'node_page_view') {
+  if (in_array($item['page_callback'], array('node_page_view', 'page_manager_node_view'))) {
     $node = $item['page_arguments'][0];
     $enabled_types = variable_get('taxonomy_menu_trails_node_types', array());
     if (

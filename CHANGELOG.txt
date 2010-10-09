@@ -2,6 +2,7 @@ $Id
 
 Taxonomy Menu Trails 6.x-1.x, xxxx-xx-xx
 ----------------------------------------------
+#929134 by epieddy: Added support for Ctools Page Manager's node template feature
 #935952 by xgmorkx: Fixed server hangup on nodes with terms when none of theese terms 
   have menu items and term selection method was set to "First term with menu" or 
   "Last term with menu"
