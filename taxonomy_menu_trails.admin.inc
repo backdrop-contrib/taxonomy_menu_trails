@@ -11,12 +11,13 @@
 
 function taxonomy_menu_trails_settings() {
   $form = array(
-    'taxonomy_menu_trails_node_types' => array(
+    /*'taxonomy_menu_trails_node_types' => array(
       '#type' => 'checkboxes',
       '#title' => t('Node types to set active trail'),
       '#options' => node_get_types('names'),
       '#default_value' => variable_get('taxonomy_menu_trails_node_types', array()),
-    ),
+    ),*/
+    'taxonomy_menu_trails_node_types' => array(),
     'taxonomy_menu_trails_only_without_menu' => array(
       '#type' => 'checkbox',
       '#title' => t("Only if node doesn't have enabled menu item"),
@@ -25,15 +26,17 @@ function taxonomy_menu_trails_settings() {
     'taxonomy_menu_trails_selection_method' => array(
       '#type' => 'select',
       '#title' => t("Node's term selection method"),
-      '#description' => t("This option switches how module chooses term for processing:<ul><li><b>First/Last</b> - just select lightest/haviest node's term (but it can be the term without menu item) - best performance</li><li><b>First/last with menu</b> - find first/last term with enabled menu item - lower performance</li></ul>"),
+      '#description' => t("This option switches how module chooses term for processing:<ul><li><b>First/Last</b> - just select lightest/haviest node's term (but it can be the term without menu item) - best performance</li><li><b>First/last with menu</b> - find first/last term with enabled menu item - lower performance</li><li><b>Deepest in lineage</b> - deepest term in selected lineage. All terms in lineage must be attached to node for this function to work. It's highly recommended to use Hierarchical Select for lineage saving. This method is the slowest.</ul>"),
       '#default_value' => variable_get('taxonomy_menu_trails_selection_method', 'first'),
       '#options' => array(
         'first' => t('First term'),
         'last' => t('Last term'),
         'first-with-menu' => t('First term with menu'),
         'last-with-menu' => t('Last term with menu'),
+        'deepest-in-lineage' => t('Deepest in lineage'),
       ),
     ),
+    '#submit' => array('taxonomy_menu_trails_settings_cleanup')
   );
   
   if (module_exists('taxonomy_menu')) {
@@ -45,5 +48,45 @@ function taxonomy_menu_trails_settings() {
     );
   }
   
+  $types = node_get_types('names');
+  $vocs = array(
+    '#tree' => TRUE,
+    '#type' => 'fieldset',
+    '#title' => t('Vocabularies to select terms from'),
+  );
+  $defaults = variable_get('taxonomy_menu_trails_node_types', array());
+  foreach ($types as $key => $type) {
+    $type_vocs = taxonomy_get_vocabularies($key);
+    if (!empty($type_vocs)) {
+      foreach ($type_vocs as $vid => $voc) {
+        $type_vocs[$vid] = $voc->name;
+      }
+      $vocs[$key] = array(
+        '#type' => 'checkboxes',
+        '#title' => $type,
+        '#options' => $type_vocs,
+        '#default_value' => !empty($defaults[$key]) ? $defaults[$key] : array(),
+      );
+    }
+  }
+  
+  if (count(element_children($vocs))) {
+    $form['taxonomy_menu_trails_node_types'] = $vocs;
+  }
+  
   return system_settings_form($form);
+}
+
+function taxonomy_menu_trails_settings_cleanup($form, &$state) {
+  if (is_array($state['values']['taxonomy_menu_trails_node_types'])) {
+    foreach ($state['values']['taxonomy_menu_trails_node_types'] as $type => $vocs) {
+      $clean_vocs = array_filter($vocs);
+      if (empty($clean_vocs)) {
+        unset($state['values']['taxonomy_menu_trails_node_types'][$type]);
+      }
+      else {
+        $state['values']['taxonomy_menu_trails_node_types'][$type] = $clean_vocs;
+      }
+    }
+  }
 }

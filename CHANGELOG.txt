@@ -2,6 +2,8 @@ $Id
 
 Taxonomy Menu Trails 6.x-1.x, xxxx-xx-xx
 ----------------------------------------------
+by Dmitriy.trt: New "Deepest in lineage" term selection method
+by Dmitriy.trt: Selectable vocabularies for each content type to select terms from
 #929134 by epieddy: Added support for Ctools Page Manager's node template feature
 #935952 by xgmorkx: Fixed server hangup on nodes with terms when none of theese terms 
   have menu items and term selection method was set to "First term with menu" or 
