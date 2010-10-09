@@ -1,7 +1,8 @@
 $Id
 
-Taxonomy Menu Trails 6.x-1.x, xxxx-xx-xx
+Taxonomy Menu Trails 6.x-1.1, 2010-10-10
 ----------------------------------------------
+by Dmitriy.trt: Added translation template and Russian translation
 by Dmitriy.trt: New "Deepest in lineage" term selection method
 by Dmitriy.trt: Selectable vocabularies for each content type to select terms from
 #929134 by epieddy: Added support for Ctools Page Manager's node template feature

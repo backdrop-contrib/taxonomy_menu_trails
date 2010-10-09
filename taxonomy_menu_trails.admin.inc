@@ -26,13 +26,13 @@ function taxonomy_menu_trails_settings() {
     'taxonomy_menu_trails_selection_method' => array(
       '#type' => 'select',
       '#title' => t("Node's term selection method"),
-      '#description' => t("This option switches how module chooses term for processing:<ul><li><b>First/Last</b> - just select lightest/haviest node's term (but it can be the term without menu item) - best performance</li><li><b>First/last with menu</b> - find first/last term with enabled menu item - lower performance</li><li><b>Deepest in lineage</b> - deepest term in selected lineage. All terms in lineage must be attached to node for this function to work. It's highly recommended to use Hierarchical Select for lineage saving. This method is the slowest.</ul>"),
+      '#description' => t("This option defines how module chooses term for processing:<ul><li><b>First/Last</b> - just select lightest/haviest node's term (but it can be the term without menu item). Best performance.</li><li><b>First/last with menu item</b> - find first/last term with enabled menu item. Low performance</li><li><b>Deepest in lineage</b> - use deepest term in selected lineage. All parent terms in lineage must be attached to node for this function to work. It's highly recommended to use Hierarchical Select for lineage saving. Low performance.</ul>"),
       '#default_value' => variable_get('taxonomy_menu_trails_selection_method', 'first'),
       '#options' => array(
         'first' => t('First term'),
         'last' => t('Last term'),
-        'first-with-menu' => t('First term with menu'),
-        'last-with-menu' => t('Last term with menu'),
+        'first-with-menu' => t('First term with menu item'),
+        'last-with-menu' => t('Last term with menu item'),
         'deepest-in-lineage' => t('Deepest in lineage'),
       ),
     ),
