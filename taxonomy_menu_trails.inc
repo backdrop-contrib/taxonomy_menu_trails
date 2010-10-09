@@ -28,7 +28,7 @@ function _taxonomy_menu_trails_process($item) {
       $term = end($taxonomy);
       break;
     case 'first-with-menu':
-      for ($term = reset($taxonomy); $term !== NULL; $term = next($taxonomy)) {
+      for ($term = reset($taxonomy); $term !== FALSE; $term = next($taxonomy)) {
         $href = _taxonomy_menu_trails_get_path($term);
         if (db_result(db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = "%s" AND hidden = 0', $href)) > 0) {
           break;
@@ -36,7 +36,7 @@ function _taxonomy_menu_trails_process($item) {
       }
       break;
     case 'last-with-menu':
-      for ($term = end($taxonomy); $term !== NULL; $term = prev($taxonomy)) {
+      for ($term = end($taxonomy); $term !== FALSE; $term = prev($taxonomy)) {
         $href = _taxonomy_menu_trails_get_path($term);
         if (db_result(db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = "%s" AND hidden = 0', $href)) > 0) {
           break;
