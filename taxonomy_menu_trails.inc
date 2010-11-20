@@ -18,56 +18,75 @@ function _taxonomy_menu_trails_get_path($term) {
 }
 
 function _taxonomy_menu_trails_process($item) {
-  $href = NULL;
-  $taxonomy = &$item['page_arguments'][0]->taxonomy;
+  
+  $node = $item['page_arguments'][0];
+  $types = variable_get('taxonomy_menu_trails_node_types', array());
+  $vids = $types[$node->type];
+  $taxonomy = $node->taxonomy;
+  $selected_term = NULL;
+  $selected_href = NULL;
+  
   switch (variable_get('taxonomy_menu_trails_selection_method', 'first')) {
     case 'first':
-      $term = reset($taxonomy);
+      for ($term = reset($taxonomy); $term !== FALSE; $term = next($taxonomy)) {
+        if (in_array($term->vid, $vids)) {
+          $selected_term = $term;
+          break;
+        }
+      }
       break;
     case 'last':
-      $term = end($taxonomy);
+      for ($term = end($taxonomy); $term !== FALSE; $term = prev($taxonomy)) {
+        if (in_array($term->vid, $vids)) {
+          $selected_term = $term;
+          break;
+        }
+      }
       break;
     case 'first-with-menu':
       for ($term = reset($taxonomy); $term !== FALSE; $term = next($taxonomy)) {
-        $href = _taxonomy_menu_trails_get_path($term);
-        if (db_result(db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = "%s" AND hidden = 0', $href)) > 0) {
-          break;
+        if (in_array($term->vid, $vids)) {
+          $href = _taxonomy_menu_trails_get_path($term);
+          if (db_result(db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = "%s" AND hidden = 0', $href)) > 0) {
+            $selected_term = $term;
+            $selected_href = $href;
+            break;
+          }
         }
       }
       break;
     case 'last-with-menu':
       for ($term = end($taxonomy); $term !== FALSE; $term = prev($taxonomy)) {
-        $href = _taxonomy_menu_trails_get_path($term);
-        if (db_result(db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = "%s" AND hidden = 0', $href)) > 0) {
-          break;
+        if (in_array($term->vid, $vids)) {
+          $href = _taxonomy_menu_trails_get_path($term);
+          if (db_result(db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = "%s" AND hidden = 0', $href)) > 0) {
+            $selected_term = $term;
+            $selected_href = $href;
+            break;
+          }
         }
       }
       break;
     case 'deepest-in-lineage':
-      $node = $item['page_arguments'][0];
-      $term = _taxonomy_menu_trails_get_deepest_term($node);
+      $selected_term = _taxonomy_menu_trails_get_deepest_term($node, $vids);
       break;
     default:
       return;
   }
   
-  if ($term === NULL)
+  if (!$selected_term) {
     return;
+  }
   
-  if ($href === NULL)
-    $href = _taxonomy_menu_trails_get_path($term);
-  $item['href'] = $href;
+  if ($selected_href === NULL) {
+    $selected_href = _taxonomy_menu_trails_get_path($selected_term);
+  }
+  $item['href'] = $selected_href;
   
   menu_set_item(NULL, $item);
 }
 
-function _taxonomy_menu_trails_get_deepest_term($node) {
-  $types = variable_get('taxonomy_menu_trails_node_types', array());
-
-  if (empty($types[$node->type])) {
-    return NULL;
-  }
-  $vids = $types[$node->type];
+function _taxonomy_menu_trails_get_deepest_term($node, $vids) {
   $res = db_query('SELECT tn.tid, t.vid, th.parent FROM {term_node} tn INNER JOIN {term_data} t ON tn.tid = t.tid INNER JOIN {term_hierarchy} th ON tn.tid = th.tid WHERE tn.vid = %d AND t.vid IN(' . db_placeholders($vids) . ')', array_merge(array($node->vid), array_values($vids)));
   $terms = array();
   while ($row = db_fetch_object($res)) {

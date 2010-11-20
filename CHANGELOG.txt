@@ -1,7 +1,9 @@
 $Id
 
-Taxonomy Menu Trails 6.x-1.x, xxxx-xx-xx
+Taxonomy Menu Trails 6.x-1.2, 2010-11-21
 ----------------------------------------------
+#970714 by maximpodorov: Vocabulary selection was not used by term selection
+  methods other than "Deepest in lineage"
 #967522 by xgmorkx: Detect node page by path instead of page callback
 
 Taxonomy Menu Trails 6.x-1.1, 2010-10-10
