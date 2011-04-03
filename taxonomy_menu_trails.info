@@ -1,5 +1,5 @@
-core          = "6.x"
+core           = "7.x"
 dependencies[] = taxonomy
-description   = "Changes menu trail of current node to its term's menu item. Provides optional integration with Taxonomy Menu modules."
-name          = "Taxonomy Menu Trails"
-package       = Taxonomy Menu
+description    = "Changes menu trail of current entity to its term's menu item. Provides optional integration with Taxonomy Menu modules."
+name           = "Taxonomy Menu Trails"
+package        = Taxonomy Menu

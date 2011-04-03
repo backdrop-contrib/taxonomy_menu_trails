@@ -12,10 +12,10 @@
  * Implementation of hook_uninstall()
  */
 function taxonomy_menu_trails_uninstall() {
-  variable_del('taxonomy_menu_trails_node_types');
-  variable_del('taxonomy_menu_trails_only_without_menu');
-  variable_del('taxonomy_menu_trails_selection_method');
-  variable_del('taxonomy_menu_trails_integration_with_tm');
+  //TODO try it
+  db_delete('variable')
+    ->condition('name', 'taxonomy_menu_trails_%', 'LIKE')
+    ->execute();
 }
 
 function taxonomy_menu_trails_update_6101() {
@@ -32,4 +32,8 @@ function taxonomy_menu_trails_update_6101() {
   }
   variable_set('taxonomy_menu_trails_node_types', $types);
   return array();
+}
+
+function taxonomy_menu_trails_update_7100() {
+  // TODO update from 6.x
 }

@@ -1,13 +1,30 @@
 <?php
 
-
 /**
  * @file
- * Changes menu trail of current node to its lightest term's 
- * menu item (only if node doesn't belong to any menu)
+ * Changes menu trail of current node to its term's menu item
  *
  * @author Dmitriy.trt      <http://drupal.org/user/329125>
  */
+
+function _taxonomy_menu_trails_get_settings($entity_type, $bundle, $load_default = TRUE) {
+  $var_name = 'taxonomy_menu_trails_' . $entity_type . '_' . $bundle;
+  $settings = variable_get($var_name);
+  $var_exists = !empty($settings);
+  if (empty($settings) && $load_default) {
+    $settings = _taxonomy_menu_trails_defaults();
+  }
+  return array($settings, $var_name, $var_exists);
+}
+
+function _taxonomy_menu_trails_defaults() {
+  return array(
+    'selection_method' => 'first',
+    'only_without_menu' => FALSE,
+    'term_with_menu' => FALSE,
+    'instances' => array(),
+  );
+}
 
 /**
  * Implementation of hook_init().
@@ -15,42 +32,45 @@
 function taxonomy_menu_trails_init() {
   $item = menu_get_item();
   if (arg(0) == 'node' && is_numeric(arg(1))) {
-    $node = $item['page_arguments'][0];
-    $enabled_types = variable_get('taxonomy_menu_trails_node_types', array());
-    if (
-      !empty($node->taxonomy) //Node has terms
-      && !empty($enabled_types[$node->type]) //Processing for this node type was enabled
-      && (
-        !variable_get('taxonomy_menu_trails_only_without_menu', TRUE) //"Only if node doesn't have menu item" option is disabled
-        || db_result(db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = "%s" AND hidden = 0', $item['href'])) == 0 //OR node doesn't have menu item
-      )
-    ) {
-      module_load_include('inc', 'taxonomy_menu_trails');
-      _taxonomy_menu_trails_process($item);
+    //TODO check more carefully
+    $object = $item['page_arguments'][0];
+    $settings = variable_get('taxonomy_menu_trails_node_' . $object->type, array());
+    if (!empty($settings['instances'])) {
+      if ($settings['only_without_menu']) {
+        $has_own_menu = db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = :path AND hidden = 0', array(':path' => $item['href']))->fetchField();
+      }
+      if (!$settings['only_without_menu'] || !$has_own_menu) {
+        $has_terms = FALSE;
+        //TODO figure out meaning of language in term reference fields
+        foreach ($settings['instances'] as $field) {
+          if (!empty($object->$field)) {
+            $has_terms = TRUE;
+            break;
+          }
+        }
+        if ($has_terms) {
+          module_load_include('inc', 'taxonomy_menu_trails');
+          _taxonomy_menu_trails_process($item, 'node', $object->type, $object);
+        }
+      }
     }
   }
 }
 
-/**
- * Implementation of hook_menu().
- */
-function taxonomy_menu_trails_menu() {
-  $items = array(
-    'admin/settings/taxonomy-menu-trails' => array(
-      'title' => 'Taxonomy menu trails',
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('taxonomy_menu_trails_settings'),
-      'access arguments' => array('administer taxonomy menu trails'),
-      'type' => MENU_NORMAL_ITEM,
-      'file' => 'taxonomy_menu_trails.admin.inc',
-    ),
-  );
-  return $items;
+//TODO remove it
+function taxonomy_menu_trails_form_alter(&$form, &$state, $form_id) {
+  $fff = $form_id;
 }
 
-/**
- * Implementation of hook_perm().
- */
-function taxonomy_menu_trails_perm() {
-  return array('administer taxonomy menu trails');
+function taxonomy_menu_trails_form_field_ui_field_edit_form_alter(&$form, &$state) {
+  if ($form['#instance']['entity_type'] == 'node' && $form['#field']['type'] == 'taxonomy_term_reference') {
+    module_load_include('admin.inc', 'taxonomy_menu_trails');
+    _taxonomy_menu_trails_alter_field_form($form);
+  }
+}
+
+function taxonomy_menu_trails_form_node_type_form_alter(&$form, &$state) {
+  module_load_include('admin.inc', 'taxonomy_menu_trails');
+  _taxonomy_menu_trails_alter_entity_form($form, 'node', $form['#node_type']);
+  $form['taxonomy_menu_trails']['#group'] = 'additional_settings';
 }
