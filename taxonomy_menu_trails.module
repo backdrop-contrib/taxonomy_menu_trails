@@ -4,6 +4,8 @@
  * @file
  * Changes menu trail of current node to its term's menu item
  *
+ * @todo: write description for each function
+ *
  * @author Dmitriy.trt      <http://drupal.org/user/329125>
  */
 
@@ -50,16 +52,11 @@ function taxonomy_menu_trails_init() {
         }
         if ($has_terms) {
           module_load_include('inc', 'taxonomy_menu_trails');
-          _taxonomy_menu_trails_process($item, 'node', $object->type, $object);
+          _taxonomy_menu_trails_process('node', $object->type, $object);
         }
       }
     }
   }
-}
-
-//TODO remove it
-function taxonomy_menu_trails_form_alter(&$form, &$state, $form_id) {
-  $fff = $form_id;
 }
 
 function taxonomy_menu_trails_form_field_ui_field_edit_form_alter(&$form, &$state) {
@@ -73,4 +70,17 @@ function taxonomy_menu_trails_form_node_type_form_alter(&$form, &$state) {
   module_load_include('admin.inc', 'taxonomy_menu_trails');
   _taxonomy_menu_trails_alter_entity_form($form, 'node', $form['#node_type']);
   $form['taxonomy_menu_trails']['#group'] = 'additional_settings';
+}
+
+function taxonomy_menu_trails_entity_insert($entity, $type) {
+  taxonomy_menu_trails_entity_update($entity, $type);
+}
+
+function taxonomy_menu_trails_entity_update($entity, $type) {
+  switch ($type) {
+    case 'node':
+      //TODO replace with specific cache entries deleting
+      menu_cache_clear_all();
+      break;
+  }
 }

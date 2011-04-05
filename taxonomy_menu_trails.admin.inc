@@ -122,7 +122,7 @@ function taxonomy_menu_trails_entity_form_submit($form, &$state) {
   $settings['instances'] = array_filter($settings['instances']);
   if (!empty($settings['instances'])) {
     //sort by instances weight again, because it could be changed since form generation
-    //_taxonomy_menu_trails_sort_by_weight($settings['instances'], $entity_type, $bundle);
+    _taxonomy_menu_trails_sort_by_weight($settings['instances'], $entity_type, $bundle);
     
     variable_set($var_name, $settings);
   }

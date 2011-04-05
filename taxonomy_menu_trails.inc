@@ -5,6 +5,8 @@
  * @file
  * Processing functions for taxonomy_menu_trails.
  *
+ * @todo: write description for each function
+ *
  * @author Dmitriy.trt      <http://drupal.org/user/329125>
  */
 
@@ -17,13 +19,13 @@ function _taxonomy_menu_trails_get_path($term) {
     return taxonomy_term_path($term);
 }*/
 
-function _taxonomy_menu_trails_process($item, $entity_type, $bundle, $object) {
+function _taxonomy_menu_trails_process($entity_type, $bundle, $entity) {
   list($settings) = _taxonomy_menu_trails_get_settings($entity_type, $bundle, FALSE);
   $instances = $settings['instances'];
   $tids = array();
   //TODO figure out meaning of language in term reference fields
   foreach ($instances as $field) {
-    foreach ($object->$field as $lang => $terms) {
+    foreach ($entity->$field as $lang => $terms) {
       foreach ($terms as $term) {
         $tids[] = $term['tid'];
       }
@@ -32,6 +34,9 @@ function _taxonomy_menu_trails_process($item, $entity_type, $bundle, $object) {
 
   
   if ($settings['term_with_menu']) {
+    // rather crazy method to get terms with menu items
+    // can we replace it with something more correct?
+    
     $filtered_tids = array();
     $paths = array();
     foreach ($tids as $tid) {
@@ -44,6 +49,7 @@ function _taxonomy_menu_trails_process($item, $entity_type, $bundle, $object) {
       ->condition('ml.hidden', FALSE)
       ->execute()
       ->fetchAllKeyed();
+    
     $tid_position = strlen('taxonomy/term/');
     foreach ($result as $mlid => $path) {
       $tid = substr($path, $tid_position);
@@ -64,33 +70,7 @@ function _taxonomy_menu_trails_process($item, $entity_type, $bundle, $object) {
     case 'last':
       $selected_tid = end($filtered_tids);
       break;
-    /*TODO case 'first-with-menu':
-      for ($term = reset($taxonomy); $term !== FALSE; $term = next($taxonomy)) {
-        if (in_array($term->vid, $vids)) {
-          $href = _taxonomy_menu_trails_get_path($term);
-          if (db_result(db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = "%s" AND hidden = 0', $href)) > 0) {
-            $selected_term = $term;
-            $selected_href = $href;
-            break;
-          }
-        }
-      }
-      break;
-    case 'last-with-menu':
-      for ($term = end($taxonomy); $term !== FALSE; $term = prev($taxonomy)) {
-        if (in_array($term->vid, $vids)) {
-          $href = _taxonomy_menu_trails_get_path($term);
-          if (db_result(db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = "%s" AND hidden = 0', $href)) > 0) {
-            $selected_term = $term;
-            $selected_href = $href;
-            break;
-          }
-        }
-      }
-      break;
-    case 'deepest-in-lineage':
-      $selected_term = _taxonomy_menu_trails_get_deepest_term($node, $vids);
-      break;*/
+    //TODO case 'deepest-in-lineage':
     default:
       return;
   }
@@ -100,9 +80,10 @@ function _taxonomy_menu_trails_process($item, $entity_type, $bundle, $object) {
   }
 
   //TODO taxonomy menu integration if needed
-  $selected_href = 'taxonomy/term/' . $selected_tid;
-  $item['href'] = $selected_href;
-  menu_set_item(NULL, $item);
+  $selected_path = 'taxonomy/term/' . $selected_tid;
+  $active_item = menu_link_get_preferred($selected_path);
+  $preferred_links = &drupal_static('menu_link_get_preferred');
+  $preferred_links[$_GET['q']] = $active_item;
 }
 
 /* TODO function _taxonomy_menu_trails_get_deepest_term($node, $vids) {

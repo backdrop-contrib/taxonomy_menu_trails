@@ -3,6 +3,7 @@ $Id
 Taxonomy Menu Trails 7.x-1.x, xxxx-xx-xx
 ----------------------------------------------
 Issue #1071154 by mikewink, Dmitriy.trt: Initial port to D7
+by Dmitriy.trt: new method of active trail changing and code cleanup
 
 Taxonomy Menu Trails 6.x-1.2, 2010-11-21
 ----------------------------------------------
