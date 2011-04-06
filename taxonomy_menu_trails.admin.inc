@@ -113,21 +113,29 @@ function _taxonomy_menu_trails_alter_entity_form(&$form, $entity_type, $bundle) 
 }
 
 function taxonomy_menu_trails_entity_form_submit($form, &$state) {
-  //TODO handle machine-readable name change
   $entity_type = $form['taxonomy_menu_trails']['#tmt_entity'];
-  $bundle = $form['taxonomy_menu_trails']['#tmt_bundle'];
-  list($settings, $var_name, $var_exists) = _taxonomy_menu_trails_get_settings($entity_type, $bundle);
+  $old_bundle = $form['taxonomy_menu_trails']['#tmt_bundle'];
+  list($settings, $old_var_name, $var_exists) = _taxonomy_menu_trails_get_settings($entity_type, $old_bundle);
+  switch ($entity_type) {
+    case 'node':
+      $new_bundle = $state['values']['type'];
+      break;
+    default:
+      return;
+  }
+  $new_var_name = 'taxonomy_menu_trails_' . $entity_type . '_' . $new_bundle;
   $values = !empty($state['values']['taxonomy_menu_trails']) ? $state['values']['taxonomy_menu_trails'] : array();
   $settings = array_merge($settings, $values);
   $settings['instances'] = array_filter($settings['instances']);
   if (!empty($settings['instances'])) {
     //sort by instances weight again, because it could be changed since form generation
-    _taxonomy_menu_trails_sort_by_weight($settings['instances'], $entity_type, $bundle);
+    //we're using old_bundle because renaming did not processed yet (it will be in original handler)
+    _taxonomy_menu_trails_sort_by_weight($settings['instances'], $entity_type, $old_bundle);
     
-    variable_set($var_name, $settings);
+    variable_set($new_var_name, $settings);
   }
-  elseif ($var_exists) {
-    variable_del($var_name);
+  if ($var_exists && (empty($settings['instances']) || $old_bundle !== $new_bundle)) {
+    variable_del($old_var_name);
   }
   unset($state['values']['taxonomy_menu_trails']);
 }

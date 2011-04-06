@@ -43,6 +43,9 @@ function _taxonomy_menu_trails_process($entity_type, $bundle, $entity) {
       //TODO taxonomy menu integration
       $paths[] = 'taxonomy/term/' . $tid;
     }
+    //TODO fetch full link object (grab code from menu_link_get_preferred())
+    // this will save us one query, so we can remove term_with_menu option
+    // completely (force it to "enabled")
     $result = db_select('menu_links', 'ml')
       ->fields('ml', array('mlid', 'link_path'))
       ->condition('ml.link_path', $paths, 'IN')
@@ -81,6 +84,7 @@ function _taxonomy_menu_trails_process($entity_type, $bundle, $entity) {
 
   //TODO taxonomy menu integration if needed
   $selected_path = 'taxonomy/term/' . $selected_tid;
+  //TODO use already fetched link object (minus one sql query)
   $active_item = menu_link_get_preferred($selected_path);
   $preferred_links = &drupal_static('menu_link_get_preferred');
   $preferred_links[$_GET['q']] = $active_item;
