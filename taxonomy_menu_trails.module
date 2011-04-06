@@ -32,27 +32,36 @@ function _taxonomy_menu_trails_defaults() {
  * Implementation of hook_init().
  */
 function taxonomy_menu_trails_init() {
-  $item = menu_get_item();
-  if (arg(0) == 'node' && is_numeric(arg(1))) {
-    //TODO check more carefully
-    $object = $item['page_arguments'][0];
-    $settings = variable_get('taxonomy_menu_trails_node_' . $object->type, array());
+  switch (arg(0)) {
+    case 'node':
+      if (is_numeric(arg(1))) {
+        $entity_type = 'node';
+        $entity_path = 'node/' . arg(1);
+        $entity = node_load(arg(1));
+      }
+      break;
+  }
+
+  if (!empty($entity)) {
+    list( , , $bundle) = entity_extract_ids($entity_type, $entity);
+    list($settings) = _taxonomy_menu_trails_get_settings($entity_type, $bundle, FALSE);
+  
     if (!empty($settings['instances'])) {
       if ($settings['only_without_menu']) {
-        $has_own_menu = db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = :path AND hidden = 0', array(':path' => $item['href']))->fetchField();
+        $has_own_menu = db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = :path AND hidden = 0', array(':path' => $entity_path))->fetchField();
       }
       if (!$settings['only_without_menu'] || !$has_own_menu) {
         $has_terms = FALSE;
-        //TODO figure out meaning of language in term reference fields
+        //TODO figure out: maybe we have to choose language in term reference fields
         foreach ($settings['instances'] as $field) {
-          if (!empty($object->$field)) {
+          if (!empty($entity->$field)) {
             $has_terms = TRUE;
             break;
           }
         }
         if ($has_terms) {
           module_load_include('inc', 'taxonomy_menu_trails');
-          _taxonomy_menu_trails_process('node', $object->type, $object);
+          _taxonomy_menu_trails_process($entity, $settings);
         }
       }
     }

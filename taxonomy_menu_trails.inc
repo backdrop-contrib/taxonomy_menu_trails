@@ -19,11 +19,10 @@ function _taxonomy_menu_trails_get_path($term) {
     return taxonomy_term_path($term);
 }*/
 
-function _taxonomy_menu_trails_process($entity_type, $bundle, $entity) {
-  list($settings) = _taxonomy_menu_trails_get_settings($entity_type, $bundle, FALSE);
+function _taxonomy_menu_trails_process($entity, $settings) {
   $instances = $settings['instances'];
   $tids = array();
-  //TODO figure out meaning of language in term reference fields
+  //TODO figure out: maybe we have to choose language in term reference fields
   foreach ($instances as $field) {
     foreach ($entity->$field as $lang => $terms) {
       foreach ($terms as $term) {
