@@ -29,7 +29,7 @@ function _taxonomy_menu_trails_defaults() {
 }
 
 /**
- * Implementation of hook_init().
+ * Implements hook_init().
  */
 function taxonomy_menu_trails_init() {
   switch (arg(0)) {
@@ -81,10 +81,16 @@ function taxonomy_menu_trails_form_node_type_form_alter(&$form, &$state) {
   $form['taxonomy_menu_trails']['#group'] = 'additional_settings';
 }
 
+/**
+ * Implements hook_entity_insert().
+ */
 function taxonomy_menu_trails_entity_insert($entity, $type) {
   taxonomy_menu_trails_entity_update($entity, $type);
 }
 
+/**
+ * Implements hook_entity_update().
+ */
 function taxonomy_menu_trails_entity_update($entity, $type) {
   switch ($type) {
     case 'node':

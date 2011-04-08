@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * @file
  * Install and uninstall functions for taxonomy_menu_trails.
@@ -9,10 +8,9 @@
  */
 
 /**
- * Implementation of hook_uninstall()
+ * Implements hook_uninstall()
  */
 function taxonomy_menu_trails_uninstall() {
-  //TODO try it
   db_delete('variable')
     ->condition('name', 'taxonomy_menu_trails_%', 'LIKE')
     ->execute();

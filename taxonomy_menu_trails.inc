@@ -81,7 +81,7 @@ function _taxonomy_menu_trails_process($entity, $settings) {
     return;
   }
 
-  //TODO taxonomy menu integration if needed
+  //TODO taxonomy menu integration
   $selected_path = 'taxonomy/term/' . $selected_tid;
   //TODO use already fetched link object (minus one sql query)
   $active_item = menu_link_get_preferred($selected_path);
