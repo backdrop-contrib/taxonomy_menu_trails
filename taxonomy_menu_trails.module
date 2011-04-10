@@ -81,6 +81,9 @@ function taxonomy_menu_trails_form_node_type_form_alter(&$form, &$state) {
   module_load_include('admin.inc', 'taxonomy_menu_trails');
   _taxonomy_menu_trails_alter_entity_form($form, 'node', $form['#node_type']);
   $form['taxonomy_menu_trails']['#group'] = 'additional_settings';
+  $form['taxonomy_menu_trails']['#attached'] = array(
+   'js' => array(drupal_get_path('module', 'taxonomy_menu_trails') . '/js/node-type-form.js'),
+  );
 }
 
 /**

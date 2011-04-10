@@ -3,7 +3,10 @@ $Id
 Taxonomy Menu Trails 7.x-1.x, xxxx-xx-xx
 ----------------------------------------------
 Issue #1071154 by mikewink, Dmitriy.trt: Initial port to D7
-by Dmitriy.trt: new method of active trail changing and code cleanup
+by Dmitriy.trt: New method of active trail changing (possible in D7 only)
+by Dmitriy.trt: "Deepest-in-menu" term selection method
+by Dmitriy.trt: Select from menu items rather than terms
+by mikewink, Dmitriy.trt: Vertical tab summary for node type form
 
 Taxonomy Menu Trails 6.x-1.2, 2010-11-21
 ----------------------------------------------
