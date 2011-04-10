@@ -64,9 +64,34 @@ function _taxonomy_menu_trails_process($entity, $settings) {
   $query->condition('ml.menu_name', $menu_names, 'IN');
   $query->condition('ml.link_path', $paths, 'IN');
   $query->condition('ml.hidden', '0');
+  if ($settings['selection_method'] == 'deepest-in-menu') {
+    $query->orderBy('ml.depth', 'DESC');
+  }
   $query->orderBy('ml.weight', 'ASC');
   $results = $query->execute();
 
+  $vars = compact('menu_names', 'results', 'paths', 'selected_item');
+  switch ($settings['selection_method']) {
+    case 'first':
+    case 'last':
+      $selected_item = _taxonomy_menu_trails_fetch_link_simple($vars);
+      break;
+    case 'deepest-in-menu':
+      $selected_item = _taxonomy_menu_trails_fetch_link_deepest($vars);
+      break;
+  }
+  
+  if (!$selected_item) {
+    return;
+  }
+
+  $preferred_links = &drupal_static('menu_link_get_preferred');
+  $preferred_links[$_GET['q']] = $selected_item;
+}
+
+function _taxonomy_menu_trails_fetch_link_simple($vars) {
+  extract($vars);
+  
   // Sort candidates by link path and menu name.
   $candidates = array();
   foreach ($results as $candidate) {
@@ -76,7 +101,7 @@ function _taxonomy_menu_trails_process($entity, $settings) {
       $candidates[$candidate['link_path']][$candidate['menu_name']] = $candidate;
     }
   }
-
+  
   if (!empty($candidates)) {
     // Pick the most specific link, in the most preferred menu.
     foreach ($paths as $link_path) {
@@ -92,16 +117,41 @@ function _taxonomy_menu_trails_process($entity, $settings) {
         _menu_translate($candidate_item, $map);
         if ($candidate_item['access']) {
           $selected_item = $candidate_item;
+          break 2;
         }
-        break 2;
       }
     }
   }
+
+  return $selected_item;
+}
+
+function _taxonomy_menu_trails_fetch_link_deepest($vars) {
+  extract($vars);
+
+  $candidates = array();
+  foreach ($results as $candidate) {
+    //Prefer the lightest of items with the same menu and path
+    if (!isset($candidates[$candidate['menu_name']][$candidate['link_path']])) {
+      $candidate['weight'] = $candidate['link_weight'];
+      $candidates[$candidate['menu_name']][$candidate['link_path']] = $candidate;
+    }
+  }
   
-  if (!$selected_item) {
-    return;
+  if (!empty($candidates)) {
+    foreach ($menu_names as $menu_name) {
+      if (!empty($candidates[$menu_name])) {
+        foreach ($candidates[$menu_name] as $candidate_item) {
+          $map = explode('/', $candidate_item['link_path']);
+          _menu_translate($candidate_item, $map);
+          if ($candidate_item['access']) {
+            $selected_item = $candidate_item;
+            break 2;
+          }
+        }
+      }
+    }
   }
 
-  $preferred_links = &drupal_static('menu_link_get_preferred');
-  $preferred_links[$_GET['q']] = $selected_item;
+  return $selected_item;
 }

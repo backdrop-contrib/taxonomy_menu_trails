@@ -53,12 +53,12 @@ function _taxonomy_menu_trails_alter_entity_form(&$form, $entity_type, $bundle) 
         // Number of values == 1
         '#type' => 'select',
         '#title' => t("Term selection method"),
-        '#description' => t("This option defines how module chooses term for processing:<ul><li><b>First/Last</b> - just select lightest/haviest term (but it can be the term without menu item). Best performance.</li><li><b>Deepest in lineage</b> - use deepest term in selected lineage. All parent terms in lineage must also be attached for this function to work. It's highly recommended to use Hierarchical Select for lineage saving. Low performance.</ul>"),
+        '#description' => t("This option defines how module chooses term for processing:<ul><li><b>First/Last</b> - select first/last term with menu item.</li><li><b>Deepest in menu</b> - use term with deepest menu item.</ul>"),
         '#default_value' => $settings['selection_method'],
         '#options' => array(
           'first' => t('First term'),
           'last' => t('Last term'),
-          //TODO 'deepest-in-lineage' => t('Deepest in lineage'),
+          'deepest-in-menu' => t('Deepest in menu'),
         ),
         /*TODO depends on http://drupal.org/node/1057748
         '#states' => array(
@@ -71,6 +71,7 @@ function _taxonomy_menu_trails_alter_entity_form(&$form, $entity_type, $bundle) 
         '#type' => 'checkbox',
          //TODO replace "object" with human-friendly entity type
         '#title' => t("Only if object doesn't have enabled menu item"),
+        '#description' => t("You should think twice before turning this option on, because it'll reduce site performance a bit."),
         '#default_value' => $settings['only_without_menu'],
         /*TODO also depends on http://drupal.org/node/1057748
         '#states' => array(
@@ -82,7 +83,7 @@ function _taxonomy_menu_trails_alter_entity_form(&$form, $entity_type, $bundle) 
       'tm_integration' => module_exists('taxonomy_menu') ? array(
         '#type' => 'checkbox',
         '#title' => t("Get term's path from Taxonomy Menu modules"),
-        '#description' => t("If you set up not default path for terms' menu items with Taxonomy Menu modules, module will use this paths."),
+        '#description' => t("If you've configured non-default paths for menu items in the Taxonomy Menu, module will use them. Turning this option on will reduce site performance a bit too."),
         '#default_value' => $settings['tm_integration'],
         /*TODO also depends on http://drupal.org/node/1057748
         '#states' => array(
