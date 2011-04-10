@@ -23,7 +23,6 @@ function _taxonomy_menu_trails_defaults() {
   return array(
     'selection_method' => 'first',
     'only_without_menu' => FALSE,
-    'term_with_menu' => FALSE,
     'tm_integration' => module_exists('taxonomy_menu'),
     'instances' => array(),
   );
@@ -44,6 +43,8 @@ function taxonomy_menu_trails_init() {
   }
 
   if (!empty($entity)) {
+    // TODO check for active trail cache existence and process only if there is
+    // no cache data for current path
     list( , , $bundle) = entity_extract_ids($entity_type, $entity);
     list($settings) = _taxonomy_menu_trails_get_settings($entity_type, $bundle, FALSE);
   

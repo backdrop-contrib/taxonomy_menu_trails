@@ -30,6 +30,10 @@ function _taxonomy_menu_trails_process($entity, $settings) {
     }
   }
 
+  if ($settings['selection_method'] == 'last') {
+    $tids = array_reverse($tids);
+  }
+
   $vids = array();
   if ($settings['tm_integration']) {
     // Unfortunately, there is no way to get tids-vids map without DB query
@@ -40,96 +44,58 @@ function _taxonomy_menu_trails_process($entity, $settings) {
       ->execute()
       ->fetchAllKeyed();
   }
-  
-  if ($settings['term_with_menu']) {
-    $paths_tids = array();
-    foreach ($tids as $tid) {
-      $path = _taxonomy_menu_trails_get_path($tid, $settings, $vids);
-      $paths_tids[$path] = $tid;
-    }
-    //TODO fetch full link object (grab code from menu_link_get_preferred())
-    // this will save us one query, so we can remove term_with_menu option
-    // completely (force it to "enabled")
-    $result = db_select('menu_links', 'ml')
-      ->fields('ml', array('mlid', 'link_path'))
-      ->condition('ml.link_path', array_keys($paths_tids), 'IN')
-      ->condition('ml.hidden', FALSE)
-      ->execute()
-      ->fetchAllKeyed();
-    
-    $filtered_tids = array();
-    foreach ($result as $mlid => $path) {
-      if (isset($paths_tids[$path])) {
-        $tid = $paths_tids[$path];
-        $filtered_tids[$tid] = $tid;
+
+  $selected_item = FALSE;
+  $paths = array();
+  foreach ($tids as $tid) {
+    $path = _taxonomy_menu_trails_get_path($tid, $settings, $vids);
+    $paths[] = $path;
+  }
+
+  // Retrieve a list of menu names, ordered by preference.
+  $menu_names = menu_get_active_menu_names();
+
+  $query = db_select('menu_links', 'ml', array('fetch' => PDO::FETCH_ASSOC));
+  $query->leftJoin('menu_router', 'm', 'm.path = ml.router_path');
+  $query->fields('ml');
+  // Weight must be taken from {menu_links}, not {menu_router}.
+  $query->addField('ml', 'weight', 'link_weight');
+  $query->fields('m');
+  $query->condition('ml.menu_name', $menu_names, 'IN');
+  $query->condition('ml.link_path', $paths, 'IN');
+
+  // Sort candidates by link path and menu name.
+  $candidates = array();
+  foreach ($query->execute() as $candidate) {
+    $candidate['weight'] = $candidate['link_weight'];
+    $candidates[$candidate['link_path']][$candidate['menu_name']] = $candidate;
+  }
+
+  if (!empty($candidates)) {
+    // Pick the most specific link, in the most preferred menu.
+    foreach ($paths as $link_path) {
+      if (!isset($candidates[$link_path])) {
+        continue;
+      }
+      foreach ($menu_names as $menu_name) {
+        if (!isset($candidates[$link_path][$menu_name])) {
+          continue;
+        }
+        $candidate_item = $candidates[$link_path][$menu_name];
+        $map = explode('/', $link_path);
+        _menu_translate($candidate_item, $map);
+        if ($candidate_item['access']) {
+          $selected_item = $candidate_item;
+        }
+        break 2;
       }
     }
-
-    //preserve tids order from original array
-    $filtered_tids = array_intersect($tids, $filtered_tids);
-  }
-  else {
-    $filtered_tids =& $tids;
-  }
-
-  $selected_tid = NULL;
-  switch ($settings['selection_method']) {
-    case 'first':
-      $selected_tid = reset($filtered_tids);
-      break;
-    case 'last':
-      $selected_tid = end($filtered_tids);
-      break;
-    //TODO case 'deepest-in-lineage':
-    default:
-      return;
   }
   
-  if (!$selected_tid) {
+  if (!$selected_item) {
     return;
   }
 
-  //TODO use already fetched path
-  $selected_path = _taxonomy_menu_trails_get_path($selected_tid, $settings, $vids);
-  //TODO use already fetched link object (minus one sql query)
-  $active_item = menu_link_get_preferred($selected_path);
   $preferred_links = &drupal_static('menu_link_get_preferred');
-  $preferred_links[$_GET['q']] = $active_item;
+  $preferred_links[$_GET['q']] = $selected_item;
 }
-
-/* TODO function _taxonomy_menu_trails_get_deepest_term($node, $vids) {
-  $res = db_query('SELECT tn.tid, t.vid, th.parent FROM {term_node} tn INNER JOIN {term_data} t ON tn.tid = t.tid INNER JOIN {term_hierarchy} th ON tn.tid = th.tid WHERE tn.vid = %d AND t.vid IN(' . db_placeholders($vids) . ')', array_merge(array($node->vid), array_values($vids)));
-  $terms = array();
-  while ($row = db_fetch_object($res)) {
-    $terms[$row->tid] = $row;
-  }
-  if (empty($terms)) {
-    return NULL;
-  }
-  $term = NULL;
-  $maxdepth = 0;
-  foreach ($terms as $tid => $t) {
-    if (!isset($t->depth)) {
-      $parent = $t->parent;
-      $depth = 1;
-      $parents = array($tid);
-      while ($parent != 0 && !empty($terms[$parent])) {
-        if (isset($terms[$parent]->depth)) {
-          $depth += $terms[$parent]->depth;
-          break;
-        }
-        $parents[] = $parent;
-        $parent = $terms[$parent]->parent;
-        $depth++;
-      }
-      while ($pid = array_shift($parents)) {
-        $terms[$pid]->depth = $depth--;
-      }
-    }
-    if ($terms[$tid]->depth > $maxdepth) {
-      $maxdepth = $terms[$tid]->depth;
-      $term = $t;
-    }
-  }
-  return $term;
-}*/

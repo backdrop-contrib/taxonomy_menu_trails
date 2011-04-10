@@ -67,17 +67,6 @@ function _taxonomy_menu_trails_alter_entity_form(&$form, $entity_type, $bundle) 
           ),
         ),*/
       ),
-      'term_with_menu' => array(
-        '#type' => 'checkbox',
-        '#title' => t("Skip terms without enabled menu item"),
-        '#default_value' => $settings['term_with_menu'],
-        /*TODO also depends on http://drupal.org/node/1057748
-        '#states' => array(
-          'invisible' => array(
-            'input[name^="taxonomy_menu_trails[instances]"]' => array('checked' => FALSE),
-          ),
-        ),*/
-      ),
       'only_without_menu' => array(
         '#type' => 'checkbox',
          //TODO replace "object" with human-friendly entity type
