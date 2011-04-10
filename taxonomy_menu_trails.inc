@@ -10,14 +10,13 @@
  * @author Dmitriy.trt      <http://drupal.org/user/329125>
  */
 
-/* TODO integration with Taxonomy Menu if it is still needed
-function _taxonomy_menu_trails_get_path($term) {
-  //Integration with Taxonomy Menu modules
-  if (module_exists('taxonomy_menu') && variable_get('taxonomy_menu_trails_integration_with_tm', TRUE))
-    return taxonomy_menu_create_path($term->vid, $term->tid);
-  else
-    return taxonomy_term_path($term);
-}*/
+function _taxonomy_menu_trails_get_path($tid, $settings, $vids = array()) {
+  if ($settings['tm_integration'] && module_exists('taxonomy_menu') && isset($vids[$tid])) {
+    return taxonomy_menu_create_path($vids[$tid], $tid);
+  } else {
+    return 'taxonomy/term/' . $tid;
+  }
+}
 
 function _taxonomy_menu_trails_process($entity, $settings) {
   $instances = $settings['instances'];
@@ -31,34 +30,43 @@ function _taxonomy_menu_trails_process($entity, $settings) {
     }
   }
 
+  $vids = array();
+  if ($settings['tm_integration']) {
+    // Unfortunately, there is no way to get tids-vids map without DB query
+    // If you know one, please create issue and describe method
+    $vids = db_select('taxonomy_term_data', 'ttd')
+      ->fields('ttd', array('tid', 'vid'))
+      ->condition('ttd.tid', $tids, 'IN')
+      ->execute()
+      ->fetchAllKeyed();
+  }
   
   if ($settings['term_with_menu']) {
-    // rather crazy method to get terms with menu items
-    // can we replace it with something more correct?
-    
-    $filtered_tids = array();
-    $paths = array();
+    $paths_tids = array();
     foreach ($tids as $tid) {
-      //TODO taxonomy menu integration
-      $paths[] = 'taxonomy/term/' . $tid;
+      $path = _taxonomy_menu_trails_get_path($tid, $settings, $vids);
+      $paths_tids[$path] = $tid;
     }
     //TODO fetch full link object (grab code from menu_link_get_preferred())
     // this will save us one query, so we can remove term_with_menu option
     // completely (force it to "enabled")
     $result = db_select('menu_links', 'ml')
       ->fields('ml', array('mlid', 'link_path'))
-      ->condition('ml.link_path', $paths, 'IN')
+      ->condition('ml.link_path', array_keys($paths_tids), 'IN')
       ->condition('ml.hidden', FALSE)
       ->execute()
       ->fetchAllKeyed();
     
-    $tid_position = strlen('taxonomy/term/');
+    $filtered_tids = array();
     foreach ($result as $mlid => $path) {
-      $tid = substr($path, $tid_position);
-      $tid = intval($tid);
-
-      $filtered_tids[] = $tid;
+      if (isset($paths_tids[$path])) {
+        $tid = $paths_tids[$path];
+        $filtered_tids[$tid] = $tid;
+      }
     }
+
+    //preserve tids order from original array
+    $filtered_tids = array_intersect($tids, $filtered_tids);
   }
   else {
     $filtered_tids =& $tids;
@@ -81,8 +89,8 @@ function _taxonomy_menu_trails_process($entity, $settings) {
     return;
   }
 
-  //TODO taxonomy menu integration
-  $selected_path = 'taxonomy/term/' . $selected_tid;
+  //TODO use already fetched path
+  $selected_path = _taxonomy_menu_trails_get_path($selected_tid, $settings, $vids);
   //TODO use already fetched link object (minus one sql query)
   $active_item = menu_link_get_preferred($selected_path);
   $preferred_links = &drupal_static('menu_link_get_preferred');

@@ -24,6 +24,7 @@ function _taxonomy_menu_trails_defaults() {
     'selection_method' => 'first',
     'only_without_menu' => FALSE,
     'term_with_menu' => FALSE,
+    'tm_integration' => module_exists('taxonomy_menu'),
     'instances' => array(),
   );
 }

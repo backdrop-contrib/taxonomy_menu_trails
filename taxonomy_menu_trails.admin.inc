@@ -90,6 +90,21 @@ function _taxonomy_menu_trails_alter_entity_form(&$form, $entity_type, $bundle) 
           ),
         ),*/
       ),
+      'tm_integration' => module_exists('taxonomy_menu') ? array(
+        '#type' => 'checkbox',
+        '#title' => t("Get term's path from Taxonomy Menu modules"),
+        '#description' => t("If you set up not default path for terms' menu items with Taxonomy Menu modules, module will use this paths."),
+        '#default_value' => $settings['tm_integration'],
+        /*TODO also depends on http://drupal.org/node/1057748
+        '#states' => array(
+          'invisible' => array(
+            'input[name^="taxonomy_menu_trails[instances]"]' => array('checked' => FALSE),
+          ),
+        ),*/
+      ) : array(
+        '#type' => 'value',
+        '#value' => $settings['tm_integration'],
+      ),
     );
     
     // adding our submit function before default handler because
