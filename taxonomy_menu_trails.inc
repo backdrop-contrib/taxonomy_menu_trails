@@ -63,6 +63,7 @@ function _taxonomy_menu_trails_process($entity, $settings) {
   $query->fields('m');
   $query->condition('ml.menu_name', $menu_names, 'IN');
   $query->condition('ml.link_path', $paths, 'IN');
+  $query->condition('ml.hidden', '0');
 
   // Sort candidates by link path and menu name.
   $candidates = array();
