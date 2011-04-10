@@ -64,12 +64,17 @@ function _taxonomy_menu_trails_process($entity, $settings) {
   $query->condition('ml.menu_name', $menu_names, 'IN');
   $query->condition('ml.link_path', $paths, 'IN');
   $query->condition('ml.hidden', '0');
+  $query->orderBy('ml.weight', 'ASC');
+  $results = $query->execute();
 
   // Sort candidates by link path and menu name.
   $candidates = array();
-  foreach ($query->execute() as $candidate) {
-    $candidate['weight'] = $candidate['link_weight'];
-    $candidates[$candidate['link_path']][$candidate['menu_name']] = $candidate;
+  foreach ($results as $candidate) {
+    //Prefer the lightest of items with the same menu and path
+    if (!isset($candidates[$candidate['link_path']][$candidate['menu_name']])) {
+      $candidate['weight'] = $candidate['link_weight'];
+      $candidates[$candidate['link_path']][$candidate['menu_name']] = $candidate;
+    }
   }
 
   if (!empty($candidates)) {
