@@ -27,6 +27,9 @@ function _taxonomy_menu_trails_sort_by_weight_helper($a, $b) {
 function _taxonomy_menu_trails_sort_by_weight(&$instances, $entity_type, $bundle) {
   $static = &drupal_static(__FUNCTION__, array());
   $static = compact('entity_type', 'bundle');
+  // make sure fields info is collated already to workaround warning on 
+  // field creation
+  _field_info_collate_fields();
   uksort($instances, '_taxonomy_menu_trails_sort_by_weight_helper');
   $static = array();
 }

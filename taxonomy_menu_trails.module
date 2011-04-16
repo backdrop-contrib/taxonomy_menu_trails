@@ -4,6 +4,8 @@
  * @file
  * Changes menu trail of current entity to its term's menu item.
  *
+ * @todo Handle fields reordering and deleting
+ *
  * @author Dmitriy.trt      <http://drupal.org/user/329125>
  */
 
