@@ -4,11 +4,12 @@
  * @file
  * Settings forms alteration for taxonomy_menu_trails.
  *
- * @todo: write description for each function
- *
  * @author Dmitriy.trt      <http://drupal.org/user/329125>
  */
 
+/**
+ * Callback for _taxonomy_menu_trails_sort_by_weight().
+ */
 function _taxonomy_menu_trails_sort_by_weight_helper($a, $b) {
   $vars = &drupal_static('_taxonomy_menu_trails_sort_by_weight');
   $a_info = field_info_instance($vars['entity_type'], $a, $vars['bundle']);
@@ -16,6 +17,13 @@ function _taxonomy_menu_trails_sort_by_weight_helper($a, $b) {
   return $a_info['widget']['weight'] - $b_info['widget']['weight'];
 }
 
+/**
+ * Sorts instances array by its weight fetched from field info API.
+ *
+ * @param array $instances
+ * @param string $entity_type
+ * @param string $bundle
+ */
 function _taxonomy_menu_trails_sort_by_weight(&$instances, $entity_type, $bundle) {
   $static = &drupal_static(__FUNCTION__, array());
   $static = compact('entity_type', 'bundle');
@@ -23,7 +31,14 @@ function _taxonomy_menu_trails_sort_by_weight(&$instances, $entity_type, $bundle
   $static = array();
 }
 
-function _taxonomy_menu_trails_alter_entity_form(&$form, $entity_type, $bundle) {
+/**
+ * Add Taxonomy Menu Trails settings to bundle form.
+ *
+ * @param array $form
+ * @param string $entity_type
+ * @param mixed $bundle
+ */
+function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) {
   $bundle = field_extract_bundle($entity_type, $bundle);
   list($settings) = _taxonomy_menu_trails_get_settings($entity_type, $bundle);
 
@@ -69,8 +84,8 @@ function _taxonomy_menu_trails_alter_entity_form(&$form, $entity_type, $bundle) 
       ),
       'only_without_menu' => array(
         '#type' => 'checkbox',
-         //TODO replace "object" with human-friendly entity type
-        '#title' => t("Only if object doesn't have enabled menu item"),
+         //TODO replace "entity" with human-friendly entity type
+        '#title' => t("Only if entity doesn't have enabled menu item"),
         '#description' => t("You should think twice before turning this option on, because it'll reduce site performance a bit."),
         '#default_value' => $settings['only_without_menu'],
         /*TODO also depends on http://drupal.org/node/1057748
@@ -100,7 +115,7 @@ function _taxonomy_menu_trails_alter_entity_form(&$form, $entity_type, $bundle) 
     // adding our submit function before default handler because
     // we don't want our elements to be saved as persistent variables
     // by default node type submit handler
-    array_unshift($form['#submit'], 'taxonomy_menu_trails_entity_form_submit');
+    array_unshift($form['#submit'], 'taxonomy_menu_trails_bundle_form_submit');
   }
   else {
     $subform = array(
@@ -117,7 +132,10 @@ function _taxonomy_menu_trails_alter_entity_form(&$form, $entity_type, $bundle) 
   ) + $subform;
 }
 
-function taxonomy_menu_trails_entity_form_submit($form, &$state) {
+/**
+ * Submit handler for bundle form.
+ */
+function taxonomy_menu_trails_bundle_form_submit($form, &$state) {
   $entity_type = $form['taxonomy_menu_trails']['#tmt_entity'];
   $old_bundle = $form['taxonomy_menu_trails']['#tmt_bundle'];
   list($settings, $old_var_name, $var_exists) = _taxonomy_menu_trails_get_settings($entity_type, $old_bundle);
@@ -145,6 +163,9 @@ function taxonomy_menu_trails_entity_form_submit($form, &$state) {
   unset($state['values']['taxonomy_menu_trails']);
 }
 
+/**
+ * Add Taxonomy Menu Trails settings to field instance form.
+ */
 function _taxonomy_menu_trails_alter_field_form(&$form) {
   list($settings) = _taxonomy_menu_trails_get_settings($form['#instance']['entity_type'], $form['#instance']['bundle'], FALSE);
 
@@ -161,6 +182,9 @@ function _taxonomy_menu_trails_alter_field_form(&$form) {
   $form['#submit'][] = 'taxonomy_menu_trails_field_form_submit';
 }
 
+/**
+ * Submit handler for field instance form.
+ */
 function taxonomy_menu_trails_field_form_submit($form, &$state) {
   $entity_type = $form['#instance']['entity_type'];
   $bundle = $form['#instance']['bundle'];

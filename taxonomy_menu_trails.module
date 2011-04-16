@@ -2,13 +2,25 @@
 
 /**
  * @file
- * Changes menu trail of current node to its term's menu item
- *
- * @todo: write description for each function
+ * Changes menu trail of current entity to its term's menu item.
  *
  * @author Dmitriy.trt      <http://drupal.org/user/329125>
  */
 
+/**
+ * Gets settings for specified entity type and bundle name.
+ * 
+ * @param string $entity_type
+ * @param string $bundle
+ * @param boolean $load_default
+ *   Should function populate settings with default values if there were no
+ *   settings saved yet.
+ * @return array
+ *   Numeric-indexed array with:
+ *   - settings for entity type and bundle
+ *   - variable name for settings
+ *   - does variable already exists.
+ */
 function _taxonomy_menu_trails_get_settings($entity_type, $bundle, $load_default = TRUE) {
   $var_name = 'taxonomy_menu_trails_' . $entity_type . '_' . $bundle;
   $settings = variable_get($var_name);
@@ -19,6 +31,11 @@ function _taxonomy_menu_trails_get_settings($entity_type, $bundle, $load_default
   return array($settings, $var_name, $var_exists);
 }
 
+/**
+ * Returns default Taxonomy Menu Trails settings for bundle
+ *
+ * @return array
+ */
 function _taxonomy_menu_trails_defaults() {
   return array(
     'selection_method' => 'first',
@@ -44,12 +61,14 @@ function taxonomy_menu_trails_init() {
 
   if (!empty($entity)) {
     // TODO check for active trail cache existence and process only if there is
-    // no cache data for current path
+    // no cache data for current path and make sure this behavior will work
+    // for Menu Block
     list( , , $bundle) = entity_extract_ids($entity_type, $entity);
     list($settings) = _taxonomy_menu_trails_get_settings($entity_type, $bundle, FALSE);
   
     if (!empty($settings['instances'])) {
       if ($settings['only_without_menu']) {
+        //TODO try to use data from menu_get_item()
         $has_own_menu = db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = :path AND hidden = 0', array(':path' => $entity_path))->fetchField();
       }
       if (!$settings['only_without_menu'] || !$has_own_menu) {
@@ -70,6 +89,9 @@ function taxonomy_menu_trails_init() {
   }
 }
 
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
 function taxonomy_menu_trails_form_field_ui_field_edit_form_alter(&$form, &$state) {
   if ($form['#instance']['entity_type'] == 'node' && $form['#field']['type'] == 'taxonomy_term_reference') {
     module_load_include('admin.inc', 'taxonomy_menu_trails');
@@ -77,9 +99,12 @@ function taxonomy_menu_trails_form_field_ui_field_edit_form_alter(&$form, &$stat
   }
 }
 
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
 function taxonomy_menu_trails_form_node_type_form_alter(&$form, &$state) {
   module_load_include('admin.inc', 'taxonomy_menu_trails');
-  _taxonomy_menu_trails_alter_entity_form($form, 'node', $form['#node_type']);
+  _taxonomy_menu_trails_alter_bundle_form($form, 'node', $form['#node_type']);
   $form['taxonomy_menu_trails']['#group'] = 'additional_settings';
   $form['taxonomy_menu_trails']['#attached'] = array(
    'js' => array(drupal_get_path('module', 'taxonomy_menu_trails') . '/js/node-type-form.js'),

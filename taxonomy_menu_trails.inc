@@ -1,23 +1,41 @@
 <?php
 
-
 /**
  * @file
  * Processing functions for taxonomy_menu_trails.
  *
- * @todo: write description for each function
- *
  * @author Dmitriy.trt      <http://drupal.org/user/329125>
  */
 
+/**
+ * Returns path for specified term ID and settings.
+ *
+ * If Taxonomy Menu integration was enabled and is possible now, function will
+ * try to get path from it, else it will return default term path.
+ *
+ * @param integer $tid
+ * @param array $settings
+ * @param array $vids
+ *   Map of term ID to vocabulary ID. It is used for Taxonomy Menu integration
+ *   only.
+ * @return string
+ *   Term path.
+ */
 function _taxonomy_menu_trails_get_path($tid, $settings, $vids = array()) {
   if ($settings['tm_integration'] && module_exists('taxonomy_menu') && isset($vids[$tid])) {
     return taxonomy_menu_create_path($vids[$tid], $tid);
-  } else {
+  }
+  else {
     return 'taxonomy/term/' . $tid;
   }
 }
 
+/**
+ * Set active trail to entitie's term selected by method specified in settings.
+ *
+ * @param object $entity
+ * @param array $settings
+ */
 function _taxonomy_menu_trails_process($entity, $settings) {
   $instances = $settings['instances'];
   $tids = array();
@@ -96,6 +114,19 @@ function _taxonomy_menu_trails_process($entity, $settings) {
   }
 }
 
+/**
+ * Selects menu item using "first" or "last" selection method. There is no
+ * difference in these two methods because terms array is reversed in
+ * _taxonomy_menu_trails_process() if "last" is used.
+ *
+ * @param array $vars
+ *   Variables map:
+ *   - menu_names - active menu names
+ *   - results - menu items fetching query results
+ *   - paths - paths of terms, order is important
+ * @return array
+ *   Selected menu item.
+ */
 function _taxonomy_menu_trails_fetch_link_simple($vars) {
   extract($vars);
   
@@ -133,6 +164,14 @@ function _taxonomy_menu_trails_fetch_link_simple($vars) {
   return $selected_item;
 }
 
+/**
+ * Selects deepest menu item.
+ *
+ * @param array $vars
+ *   @see _taxonomy_menu_trails_fetch_link_simple()
+ * @return array
+ *   Selected menu item.
+ */
 function _taxonomy_menu_trails_fetch_link_deepest($vars) {
   extract($vars);
 

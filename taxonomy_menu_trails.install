@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Install and uninstall functions for taxonomy_menu_trails.
+ * Install, uninstall and update functions for taxonomy_menu_trails.
  * 
  * @author Dmitriy.trt      <http://drupal.org/user/329125>
  */
