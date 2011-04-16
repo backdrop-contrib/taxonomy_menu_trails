@@ -87,6 +87,13 @@ function _taxonomy_menu_trails_process($entity, $settings) {
 
   $preferred_links = &drupal_static('menu_link_get_preferred');
   $preferred_links[$_GET['q']] = $selected_item;
+  
+  //TODO remove workaround when core bug #942782 will be fixed and Menu Block 
+  //remove its workarounds.
+  if (module_exists('menu_block')) {
+    $mb_preferred_links = &drupal_static('_menu_link_get_preferred');
+    $mb_preferred_links[$_GET['q']][$selected_item['menu_name']] = $selected_item;
+  }
 }
 
 function _taxonomy_menu_trails_fetch_link_simple($vars) {
