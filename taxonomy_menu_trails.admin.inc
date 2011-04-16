@@ -207,3 +207,43 @@ function taxonomy_menu_trails_field_form_submit($form, &$state) {
     variable_del($var_name);
   }
 }
+
+/**
+ * Deletes instance from settings and saves them.
+ */
+function _taxonomy_menu_trails_delete_instance($instance) {
+  list($settings, $var_name, $var_exists) = _taxonomy_menu_trails_get_settings($instance['entity_type'], $instance['bundle'], FALSE);
+  if ($var_exists) {
+    unset($settings['instances'][$instance['field_name']]);
+    if (!empty($settings['instances'])) {
+      variable_set($var_name, $settings);
+    }
+    else {
+      variable_del($var_name);
+    }
+    //TODO replace with specific cache entries deleting
+    menu_cache_clear_all();
+  }
+}
+
+/**
+ * Add custom submit handler to fields overview form.
+ */
+function _taxonomy_menu_trails_alter_overview_form(&$form) {
+  $form['#submit'][] = 'taxonomy_menu_trails_overview_form_submit';
+}
+
+/**
+ * Submit handler for fields overview form. Sorts instances and saves bundle settings.
+ */
+function taxonomy_menu_trails_overview_form_submit($form, &$state) {
+  $entity_type = $form['#entity_type'];
+  $bundle = $form['#bundle'];
+  list($settings, $var_name, $var_exists) = _taxonomy_menu_trails_get_settings($entity_type, $bundle, FALSE);
+  if ($var_exists) {
+    _taxonomy_menu_trails_sort_by_weight($settings['instances'], $entity_type, $bundle);
+    variable_set($var_name, $settings);
+    //TODO replace with specific cache entries deleting
+    menu_cache_clear_all();
+  }
+}

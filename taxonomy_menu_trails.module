@@ -4,8 +4,6 @@
  * @file
  * Changes menu trail of current entity to its term's menu item.
  *
- * @todo Handle fields reordering and deleting
- *
  * @author Dmitriy.trt      <http://drupal.org/user/329125>
  */
 
@@ -59,6 +57,7 @@ function taxonomy_menu_trails_init() {
         $entity = node_load(arg(1));
       }
       break;
+    //TODO other entity types support
   }
 
   if (!empty($entity)) {
@@ -92,7 +91,7 @@ function taxonomy_menu_trails_init() {
 }
 
 /**
- * Implements hook_form_FORM_ID_alter().
+ * Implements hook_form_FORM_ID_alter() for field_ui_field_edit_form.
  */
 function taxonomy_menu_trails_form_field_ui_field_edit_form_alter(&$form, &$state) {
   if ($form['#instance']['entity_type'] == 'node' && $form['#field']['type'] == 'taxonomy_term_reference') {
@@ -102,7 +101,7 @@ function taxonomy_menu_trails_form_field_ui_field_edit_form_alter(&$form, &$stat
 }
 
 /**
- * Implements hook_form_FORM_ID_alter().
+ * Implements hook_form_FORM_ID_alter() for node_type_form.
  */
 function taxonomy_menu_trails_form_node_type_form_alter(&$form, &$state) {
   module_load_include('admin.inc', 'taxonomy_menu_trails');
@@ -111,6 +110,36 @@ function taxonomy_menu_trails_form_node_type_form_alter(&$form, &$state) {
   $form['taxonomy_menu_trails']['#attached'] = array(
    'js' => array(drupal_get_path('module', 'taxonomy_menu_trails') . '/js/node-type-form.js'),
   );
+}
+
+/**
+ * Implements hook_field_delete_instance().
+ */
+function taxonomy_menu_trails_field_delete_instance($instance) {
+  $field_name = $instance['field_name'];
+  $info = field_info_field($field_name);
+  if ($info['type'] == 'taxonomy_term_reference') {
+    switch ($instance['entity_type']) {
+      case 'node':
+        module_load_include('admin.inc', 'taxonomy_menu_trails');
+        _taxonomy_menu_trails_delete_instance($instance);
+        break;
+      //TODO other entity types support
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for field_ui_field_overview_form.
+ */
+function taxonomy_menu_trails_form_field_ui_field_overview_form_alter(&$form, &$state) {
+  switch ($form['#entity_type']) {
+    case 'node':
+      module_load_include('admin.inc', 'taxonomy_menu_trails');
+      _taxonomy_menu_trails_alter_overview_form($form);
+      break;
+    //TODO other entity types support
+  }
 }
 
 /**
@@ -129,5 +158,6 @@ function taxonomy_menu_trails_entity_update($entity, $type) {
       //TODO replace with specific cache entries deleting
       menu_cache_clear_all();
       break;
+    //TODO other entity types support
   }
 }
