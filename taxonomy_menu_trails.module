@@ -69,7 +69,6 @@ function taxonomy_menu_trails_init() {
   
     if (!empty($settings['instances'])) {
       if ($settings['only_without_menu']) {
-        //TODO try to use data from menu_get_item()
         $has_own_menu = db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = :path AND hidden = 0', array(':path' => $entity_path))->fetchField();
       }
       if (!$settings['only_without_menu'] || !$has_own_menu) {
