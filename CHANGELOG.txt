@@ -1,3 +1,6 @@
+Taxonomy Menu Trails 7.x-1.1, 2011-04-22
+----------------------------------------------
+Issue #1133686 Dmitriy.trt: fix WSOD for cached forms we alter
 
 Taxonomy Menu Trails 7.x-1.0, 2011-04-17
 ----------------------------------------------
