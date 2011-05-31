@@ -44,6 +44,8 @@ function _taxonomy_menu_trails_sort_by_weight(&$instances, $entity_type, $bundle
 function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) {
   $bundle = field_extract_bundle($entity_type, $bundle);
   list($settings) = _taxonomy_menu_trails_get_settings($entity_type, $bundle);
+  
+  $type_info = entity_get_info($entity_type);
 
   $all_instances = field_info_instances($entity_type, $bundle);
   $instances_options = array();
@@ -87,8 +89,7 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
       ),
       'only_without_menu' => array(
         '#type' => 'checkbox',
-         //TODO replace "entity" with human-friendly entity type
-        '#title' => t("Only if entity doesn't have enabled menu item"),
+        '#title' => t("Only if @entity doesn't have enabled menu item", array('@entity' => drupal_strtolower($type_info['label']))),
         '#description' => t("You should think twice before turning this option on, because it'll reduce site performance a bit."),
         '#default_value' => $settings['only_without_menu'],
         /*TODO also depends on http://drupal.org/node/1057748
@@ -115,7 +116,7 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
       ),
     );
     
-    // adding our submit function before default handler because
+    // Add our submit function before default handler because
     // we don't want our elements to be saved as persistent variables
     // by default node type submit handler
     array_unshift($form['#submit'], 'taxonomy_menu_trails_bundle_form_submit');

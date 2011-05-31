@@ -94,3 +94,5 @@ function taxonomy_menu_trails_update_7100() {
     }
   }
 }
+
+//TODO Migration for alternative node paths from 6.x-1.x
