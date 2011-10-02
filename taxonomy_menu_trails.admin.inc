@@ -56,6 +56,16 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
     }
   }
   
+  // Looks like there is no way to get default entity path without actual
+  // enity instance, so we use switch here.
+  switch ($entity_type) {
+    case 'node':
+      $default_paths = t('paths "node/[nid]" and "node/[nid]/*"');
+      break;
+
+    // TODO: Support for other entity types.
+  }
+
   if (!empty($instances_options)) {
     _taxonomy_menu_trails_sort_by_weight($instances_options, $entity_type, $bundle);
 
@@ -114,8 +124,22 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
         '#type' => 'value',
         '#value' => $settings['tm_integration'],
       ),
+      'paths_ui' => array(
+        '#title' => t('Additional path patterns for @entity detection', array('@entity' => drupal_strtolower($type_info['label']))),
+        '#type' => 'textarea',
+        '#description' => t('By default module is trying to detect @entity at !default_paths. Here you can specify additional paths to detect @entity and set menu trails for it. The "*" character matches any non-empty string, the "%" character matches non-empty string without "/" character. Available placeholders are:<ul><li>[@id] - @entity ID</li><li>[@title] - @entity title</li></ul>Each additional pattern will be tested on each page load, so use it only if you really need this feature.', array(
+          '@entity' => drupal_strtolower($type_info['label']),
+          '!default_paths' => $default_paths,
+          '@id' => $type_info['entity keys']['id'],
+          '@title' => $type_info['entity keys']['label'],
+        )),
+        '#default_value' => $settings['paths_ui'],
+      ),
     );
-    
+
+    // Add validation function.
+    $form['#validate'][] = 'taxonomy_menu_trails_bundle_form_validate';
+
     // Add our submit function before default handler because
     // we don't want our elements to be saved as persistent variables
     // by default node type submit handler
@@ -137,26 +161,108 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
 }
 
 /**
+ * Validation function for bundle form.
+ */
+function taxonomy_menu_trails_bundle_form_validate($form, &$state) {
+  $paths_ui = trim($state['values']['taxonomy_menu_trails']['paths_ui']);
+  if (!empty($paths_ui)) {
+    $entity_type = $form['taxonomy_menu_trails']['#tmt_entity'];
+    list($id, $title) = _taxonomy_menu_trails_get_entity_type_keys($entity_type);
+    $patterns = preg_split('/\R/', $paths_ui, -1, PREG_SPLIT_NO_EMPTY);
+    foreach ($patterns as $pattern) {
+      if (preg_match_all('/\[(' . preg_quote($title) . '|' . preg_quote($id) . ')\]/u', $pattern, $matches) != 1) {
+        form_set_error('taxonomy_menu_trails][paths_ui', t('Each path pattern must have one [@id] or [@title] placeholder.', array(
+          '@id' => $id,
+          '@title' => $title,
+        )));
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * Converts entity path patterns from user input into regular expressions.
+ * 
+ * @param string $paths_ui
+ * @param string $entity_type
+ * @return array
+ *   Two-dimension array of patterns grouped by placeholder type
+ *   (id or title entity key):
+ *   - first level keys are placeholders
+ *   - second level has numerical keys.
+ */
+function _taxonomy_menu_trails_compile_path_patterns($paths_ui, $entity_type) {
+  $path_exprs = array();
+  if (!empty($paths_ui)) {
+    list($id, $title) = _taxonomy_menu_trails_get_entity_type_keys($entity_type);
+    $patterns = preg_split('/\R/', $paths_ui, -1, PREG_SPLIT_NO_EMPTY);
+    foreach ($patterns as $pattern) {
+      if (preg_match('/^(.*)\[(' . preg_quote($id) . '|' . preg_quote($title) . ')\](.*)$/u', $pattern, $matches)) {
+        // Escape parts before and after id/title placeholders. Also, convert
+        // "*" and "%" special characters into regular expressions.
+        foreach (array(1,3) as $index) {
+          $matches[$index] = str_replace(array('\\*', '%'), array('.+', '[^\/]+'), preg_quote($matches[$index], '/'));
+        }
+
+        // Convert id/title placeholder into subpattern.
+        $placeholder = $matches[2];
+        switch ($placeholder) {
+          case $id:
+            $matches[2] = '(\d+)';
+            break;
+
+          case $title:
+            $matches[2] = '([^\/]+)';
+            break;
+        }
+
+        // Construct final regular expression and store them indexed by
+        // placeholder type.
+        $path_exprs[$placeholder][] = '/^' . implode('', array_slice($matches, 1)) . '$/ui';
+      }
+    }
+  }
+  return $path_exprs;
+}
+
+/**
  * Submit handler for bundle form.
  */
 function taxonomy_menu_trails_bundle_form_submit($form, &$state) {
   $entity_type = $form['taxonomy_menu_trails']['#tmt_entity'];
   $old_bundle = $form['taxonomy_menu_trails']['#tmt_bundle'];
-  list($settings, $old_var_name, $var_exists) = _taxonomy_menu_trails_get_settings($entity_type, $old_bundle);
+
+  // Determine new bundle.
   switch ($entity_type) {
     case 'node':
       $new_bundle = $state['values']['type'];
       break;
+
+    // TODO: Support for other entity types.
+
     default:
       return;
   }
+  
+  // Convert path patterns into regular expressions and save bundle regexps
+  // into regular expressions index containing.
+  $paths_ui = trim($state['values']['taxonomy_menu_trails']['paths_ui']);
+  $bundle_regexps = _taxonomy_menu_trails_compile_path_patterns($paths_ui, $entity_type);
+  $all_regexps = variable_get('taxonomy_menu_trails__path_regexps', array());
+  unset($all_regexps[$entity_type][$old_bundle]);
+  $all_regexps[$entity_type][$new_bundle] = $bundle_regexps;
+  variable_set('taxonomy_menu_trails__path_regexps', $all_regexps);
+
+  // Process bundle name change and save our settings.
   $new_var_name = 'taxonomy_menu_trails_' . $entity_type . '_' . $new_bundle;
+  list($settings, $old_var_name, $var_exists) = _taxonomy_menu_trails_get_settings($entity_type, $old_bundle);
   $values = !empty($state['values']['taxonomy_menu_trails']) ? $state['values']['taxonomy_menu_trails'] : array();
   $settings = array_merge($settings, $values);
   $settings['instances'] = array_filter($settings['instances']);
   if (!empty($settings['instances'])) {
-    //sort by instances weight again, because it could be changed since form generation
-    //we're using old_bundle because renaming did not processed yet (it will be in original handler)
+    // Sort by instances weight again, because it could be changed since form generation.
+    // We're using old_bundle because renaming did not processed yet (it will be in original handler).
     _taxonomy_menu_trails_sort_by_weight($settings['instances'], $entity_type, $old_bundle);
     
     variable_set($new_var_name, $settings);

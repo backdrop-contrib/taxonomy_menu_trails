@@ -14,7 +14,9 @@
  * @param string $bundle
  * @param boolean $load_default
  *   Should function populate settings with default values if there were no
- *   settings saved yet.
+ *   settings saved yet. If settings were saved, they will be filled with
+ *   default values independent from this parameter (to prevent warnings
+ *   about missing array keys).
  * @return array
  *   Numeric-indexed array with:
  *   - settings for entity type and bundle
@@ -25,7 +27,10 @@ function _taxonomy_menu_trails_get_settings($entity_type, $bundle, $load_default
   $var_name = 'taxonomy_menu_trails_' . $entity_type . '_' . $bundle;
   $settings = variable_get($var_name);
   $var_exists = !empty($settings);
-  if (empty($settings) && $load_default) {
+  if (!empty($settings)) {
+    $settings += _taxonomy_menu_trails_defaults();
+  }
+  elseif ($load_default) {
     $settings = _taxonomy_menu_trails_defaults();
   }
   return array($settings, $var_name, $var_exists);
@@ -42,7 +47,26 @@ function _taxonomy_menu_trails_defaults() {
     'only_without_menu' => FALSE,
     'tm_integration' => module_exists('taxonomy_menu'),
     'instances' => array(),
+    'paths_ui' => '',
   );
+}
+
+/**
+ * Extracts entity keys from entity type info.
+ *
+ * @param string $entity_type
+ * @param array $keys
+ *   List of keys to extract.
+ * @return array
+ *   Numerical-indexed array with entity keys in the same order like in $keys argument.
+ */
+function _taxonomy_menu_trails_get_entity_type_keys($entity_type, $keys = array('id', 'label')) {
+  $type_info = entity_get_info($entity_type);
+  $result = array();
+  foreach ($keys as $key) {
+    $result[] = $type_info['entity keys'][$key];
+  }
+  return $result;
 }
 
 /**
@@ -53,25 +77,70 @@ function taxonomy_menu_trails_init() {
     case 'node':
       if (is_numeric(arg(1))) {
         $entity_type = 'node';
-        $entity_path = 'node/' . arg(1);
-        $entity = node_load(arg(1));
+        $entity = reset(entity_load($entity_type, array(arg(1))));
       }
       break;
     //TODO other entity types support
+  }
+
+  // If entity was found, extract bundle name. We don't need this for entity
+  // found with regexp.
+  if (!empty($entity)) {
+    list( , , $bundle) = entity_extract_ids($entity_type, $entity);
+  }
+  else {
+    $all_regexps = variable_get('taxonomy_menu_trails__path_regexps', array());
+    if (!empty($all_regexps)) {
+      foreach ($all_regexps as $entity_type => $bundles) {
+        foreach ($bundles as $bundle => $placeholders) {
+          foreach ($placeholders as $placeholder => $regexps) {
+            foreach ($regexps as $regexp) {
+              // Run regular expression test. $matches[1] will contain placeholder
+              // matched value.
+              if (preg_match($regexp, $_GET['q'], $matches)) {
+                $placeholder_value = $matches[1];
+                list($id_key, $title_key, $bundle_key) = _taxonomy_menu_trails_get_entity_type_keys($entity_type, array('id', 'label', 'bundle'));
+                $ids = FALSE;
+                $conditions = array(
+                  $bundle_key => $bundle,
+                );
+                switch ($placeholder) {
+                  case $id_key:
+                    $ids = array($placeholder_value);
+                    break;
+
+                  case $title_key:
+                    $conditions[$title_key] = $placeholder_value;
+                    break;
+                }
+                $entity = reset(entity_load($entity_type, $ids, $conditions));
+                if (!empty($entity)) {
+                  // Entity found, break all loops.
+                  break 4;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   if (!empty($entity)) {
     // TODO check for active trail cache existence and process only if there is
     // no cache data for current path and make sure this behavior will work
     // for Menu Block
-    list( , , $bundle) = entity_extract_ids($entity_type, $entity);
     list($settings) = _taxonomy_menu_trails_get_settings($entity_type, $bundle, FALSE);
   
     if (!empty($settings['instances'])) {
+      $pass_own_menu_check = TRUE;
       if ($settings['only_without_menu']) {
+        $entity_uri = entity_uri($entity_type, $entity);
+        $entity_path = $entity_uri['path'];
         $has_own_menu = db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = :path AND hidden = 0', array(':path' => $entity_path))->fetchField();
+        $pass_own_menu_check = !$has_own_menu;
       }
-      if (!$settings['only_without_menu'] || !$has_own_menu) {
+      if ($pass_own_menu_check) {
         $has_terms = FALSE;
         //TODO figure out: maybe we have to choose language in term reference fields
         foreach ($settings['instances'] as $field) {

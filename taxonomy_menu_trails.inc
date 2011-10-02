@@ -103,6 +103,8 @@ function _taxonomy_menu_trails_process($entity, $settings) {
     return;
   }
 
+  // TODO save original menu item, replace only path, to preserve original title, etc.
+
   $preferred_links = &drupal_static('menu_link_get_preferred');
   $preferred_links[$_GET['q']] = $selected_item;
   
