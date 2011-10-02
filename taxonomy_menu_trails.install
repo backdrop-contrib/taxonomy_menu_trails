@@ -57,6 +57,7 @@ function taxonomy_menu_trails_update_7100() {
       break;
   }
 
+  module_load_include('module', 'taxonomy_menu_trails');
   module_load_include('admin.inc', 'taxonomy_menu_trails');
 
   $new_vars = array();
@@ -78,8 +79,10 @@ function taxonomy_menu_trails_update_7100() {
         'instances' => $instances,
         'paths_ui' => $paths_ui,
       );
-      //Add regexps to the index
-      $all_regexps['node'][$type] = $regexps;
+      if (!empty($regexps)) {
+        //Add regexps to the index
+        $all_regexps['node'][$type] = $regexps;
+      }
     }
   }
   $new_vars['taxonomy_menu_trails__path_regexps'] = $all_regexps;
