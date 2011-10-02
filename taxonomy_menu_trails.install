@@ -41,6 +41,7 @@ function taxonomy_menu_trails_update_7100() {
   $old_selection_method = variable_get('taxonomy_menu_trails_selection_method', 'first');
   $tm_integration = variable_get('taxonomy_menu_trails_integration_with_tm', module_exists('taxonomy_menu'));
   $node_types = variable_get('taxonomy_menu_trails_node_types', array());
+  $paths_ui = variable_get('taxonomy_menu_trails_node_paths_ui', '');
   
   //Convert to new format
   switch ($old_selection_method) {
@@ -59,6 +60,9 @@ function taxonomy_menu_trails_update_7100() {
   module_load_include('admin.inc', 'taxonomy_menu_trails');
 
   $new_vars = array();
+  //Re-compile custom path patterns, they will be the same for all node types
+  $regexps = _taxonomy_menu_trails_compile_path_patterns($paths_ui, 'node');
+  $all_regexps = array();
   foreach ($node_types as $type => $vocs) {
     $instances = array();
     foreach ($vocs as $vid) {
@@ -72,9 +76,13 @@ function taxonomy_menu_trails_update_7100() {
         'only_without_menu' => $only_without_menu,
         'tm_integration' => $tm_integration,
         'instances' => $instances,
+        'paths_ui' => $paths_ui,
       );
+      //Add regexps to the index
+      $all_regexps['node'][$type] = $regexps;
     }
   }
+  $new_vars['taxonomy_menu_trails__path_regexps'] = $all_regexps;
 
   //Save new vars
   foreach ($new_vars as $name => $var) {
@@ -87,6 +95,7 @@ function taxonomy_menu_trails_update_7100() {
     'taxonomy_menu_trails_selection_method',
     'taxonomy_menu_trails_integration_with_tm',
     'taxonomy_menu_trails_node_types',
+    'taxonomy_menu_trails_node_paths_ui',
   );
   foreach ($old_vars as $name) {
     if (!isset($new_vars[$name])) {
@@ -94,5 +103,3 @@ function taxonomy_menu_trails_update_7100() {
     }
   }
 }
-
-//TODO Migration for alternative node paths from 6.x-1.x
