@@ -103,14 +103,20 @@ function _taxonomy_menu_trails_process($entity, $settings) {
     return;
   }
 
-  // TODO save original menu item, replace only path, to preserve original title, etc.
+  // Keep title from original menu item, so we'll have original page title
+  // instead of term menu item title. This happens if nobody calls
+  // drupal_set_title() and Drupal gets title from last active trail menu item.
+  $original_item = menu_get_item();
+  drupal_set_title($original_item['title']);
 
+  // Set selected menu item as a preferred for core function
   $preferred_links = &drupal_static('menu_link_get_preferred');
   $preferred_links[$_GET['q']] = $selected_item;
   
   //TODO remove workaround when core bug #942782 will be fixed and Menu Block 
   //remove its workarounds.
   if (module_exists('menu_block')) {
+    // Also set preferred item for Menu Block module
     $mb_preferred_links = &drupal_static('_menu_link_get_preferred');
     $mb_preferred_links[$_GET['q']][$selected_item['menu_name']] = $selected_item;
   }
