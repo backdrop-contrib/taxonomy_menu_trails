@@ -1,4 +1,4 @@
-Taxonomy Menu Trails 7.x-1.x, xxxx-xx-xx
+Taxonomy Menu Trails 7.x-1.2, 2011-10-09
 ----------------------------------------------
 Issue #1129760: implement custom entity path patterns
 Issue #1274016 by maho: More efficient way to check menu item existence
