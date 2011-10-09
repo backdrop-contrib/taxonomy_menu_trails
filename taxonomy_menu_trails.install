@@ -99,6 +99,7 @@ function taxonomy_menu_trails_update_7100() {
     'taxonomy_menu_trails_integration_with_tm',
     'taxonomy_menu_trails_node_types',
     'taxonomy_menu_trails_node_paths_ui',
+    'taxonomy_menu_trails_node_paths',
   );
   foreach ($old_vars as $name) {
     if (!isset($new_vars[$name])) {
