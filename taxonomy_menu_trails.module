@@ -141,7 +141,7 @@ function taxonomy_menu_trails_init() {
     if (!empty($settings['instances'])) {
       $pass_own_menu_check = TRUE;
       if ($settings['only_without_menu']) {
-        $has_own_menu = db_query('SELECT COUNT(*) FROM {menu_links} WHERE link_path = :path AND hidden = 0', array(':path' => $entity_path))->fetchField();
+        $has_own_menu = db_query('SELECT mlid FROM {menu_links} WHERE link_path = :path AND hidden = 0 LIMIT 1', array(':path' => $entity_path))->fetchField();
         $pass_own_menu_check = !$has_own_menu;
       }
       if ($pass_own_menu_check) {
