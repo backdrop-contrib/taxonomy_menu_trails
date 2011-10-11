@@ -77,7 +77,8 @@ function taxonomy_menu_trails_init() {
     case 'node':
       if (is_numeric(arg(1))) {
         $entity_type = 'node';
-        $entity = reset(entity_load($entity_type, array(arg(1))));
+        $entities = entity_load($entity_type, array(arg(1)));
+        $entity = reset($entities);
       }
       break;
     //TODO other entity types support
@@ -118,7 +119,8 @@ function taxonomy_menu_trails_init() {
                   $conditions[$title_key] = $placeholder_value;
                   break;
               }
-              $entity = reset(entity_load($entity_type, $ids, $conditions));
+              $entities = entity_load($entity_type, $ids, $conditions);
+              $entity = reset($entities);
               if (!empty($entity)) {
                 // Entity found, set current page as entity path and break all loops.
                 list($settings) = _taxonomy_menu_trails_get_settings($entity_type, $bundle, FALSE);
