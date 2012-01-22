@@ -107,3 +107,6 @@ function taxonomy_menu_trails_update_7100() {
     }
   }
 }
+
+// TODO: implement hook_requirements() with check for menu_tree_set_path()
+// existence.

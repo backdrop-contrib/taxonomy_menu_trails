@@ -103,18 +103,17 @@ function _taxonomy_menu_trails_process($entity, $settings) {
     return;
   }
 
-  // Keep title from original menu item, so we'll have original page title
-  // instead of term menu item title. This happens if nobody calls
-  // drupal_set_title() and Drupal gets title from last active trail menu item.
-  $original_item = menu_get_item();
-  drupal_set_title($original_item['title']);
-
-  // Set selected menu item as a preferred for core function
-  $preferred_links = &drupal_static('menu_link_get_preferred');
-  $preferred_links[$_GET['q']] = $selected_item;
+  // Set selected menu item as an active path for its menu.
+  // Function menu_tree_set_path() available since Drupal 7.9, so we should
+  // check it exists.
+  if (function_exists('menu_tree_set_path')) {
+    menu_tree_set_path($selected_item['menu_name'], $selected_item['link_path']);
+  }
   
-  //TODO remove workaround when core bug #942782 will be fixed and Menu Block 
-  //remove its workarounds.
+  // TODO: Remove workaround when Menu Block will remove its
+  // _menu_link_get_preferred(). But it's safe to leave it here even after
+  // Menu Block update to keep compatibility with old Menu Block releases.
+  // So, probably it should be here forever or until the next major release.
   if (module_exists('menu_block')) {
     // Also set preferred item for Menu Block module
     $mb_preferred_links = &drupal_static('_menu_link_get_preferred');
