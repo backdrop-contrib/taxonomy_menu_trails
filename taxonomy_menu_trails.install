@@ -108,5 +108,37 @@ function taxonomy_menu_trails_update_7100() {
   }
 }
 
-// TODO: implement hook_requirements() with check for menu_tree_set_path()
-// existence.
+/**
+ * Implements hook_requirements().
+ * 
+ * Checks for required API function added in Drupal 7.9 release.
+ *
+ * @param string $phase
+ *
+ * @return array
+ */
+function taxonomy_menu_trails_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+
+  // Include menu.inc, code was copied from _drupal_bootstrap_full().
+  require_once DRUPAL_ROOT . '/' . variable_get('menu_inc', 'includes/menu.inc');
+  
+  if (!function_exists('menu_tree_set_path')) {
+    $requirements['taxonomy_menu_trails_drupal_api'] = array(
+      'title' => $t('Taxonomy Menu Trails - Drupal API'),
+      'value' => $t('Required functions not implemented'),
+      'description' => $t('Module requires at least Drupal 7.9 or patched core with defined menu_tree_set_path() function.'),
+      'severity' => REQUIREMENT_ERROR,
+    );
+  }
+  else {
+    $requirements['taxonomy_menu_trails_drupal_core'] = array(
+      'title' => $t('Taxonomy Menu Trails - Drupal API'),
+      'value' => $t('OK'),
+      'severity' => REQUIREMENT_OK,
+    );
+  }
+
+  return $requirements;
+}
