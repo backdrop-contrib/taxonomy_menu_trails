@@ -1,6 +1,6 @@
 Taxonomy Menu Trails 7.x-2.x, xxxx-xx-xx
 ----------------------------------------------
-Issue #1413080: compatibility with D7.11+ and drop D7.8 and earlier support
+Issue #1413080: compatibility with D7.12+ and drop D7.8 and earlier support
 
 Taxonomy Menu Trails 7.x-1.3, 2011-12-18
 ----------------------------------------------
