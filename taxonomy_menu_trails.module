@@ -45,6 +45,7 @@ function _taxonomy_menu_trails_defaults() {
   return array(
     'selection_method' => 'first',
     'only_without_menu' => FALSE,
+    'set_breadcrumb' => TRUE,
     'tm_integration' => module_exists('taxonomy_menu'),
     'instances' => array(),
     'paths_ui' => '',
@@ -233,5 +234,39 @@ function taxonomy_menu_trails_entity_update($entity, $type) {
       menu_cache_clear_all();
       break;
     //TODO other entity types support
+  }
+}
+
+/**
+ * Stores selected menu item for taxonomy_menu_trails_menu_breadcrumb_alter().
+ * 
+ * @param array|null $new_item
+ *
+ * @return array|null
+ */
+function taxonomy_menu_trails_selected_item_for_breadcrumb($new_item = NULL) {
+  $item = &drupal_static(__FUNCTION__);
+  if (isset($new_item)) {
+    $item = $new_item;
+  }
+  return $item;
+}
+
+/**
+ * Implements hook_menu_breadcrumb_alter().
+ *
+ * Injects selected menu item and its parents into the breadcrumb.
+ * 
+ * @param type $active_trail
+ * @param type $item
+ */
+function taxonomy_menu_trails_menu_breadcrumb_alter(&$active_trail, $item) {
+  if (drupal_is_front_page()) {
+    return;
+  }
+
+  if ($selected_item = taxonomy_menu_trails_selected_item_for_breadcrumb()) {
+    module_load_include('inc', 'taxonomy_menu_trails');
+    _taxonomy_menu_trails_menu_breadcrumb_alter($active_trail, $selected_item);
   }
 }

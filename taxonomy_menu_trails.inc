@@ -110,6 +110,11 @@ function _taxonomy_menu_trails_process($entity, $settings) {
     menu_tree_set_path($selected_item['menu_name'], $selected_item['link_path']);
   }
   
+  // Save selected item for taxonomy_menu_trails_menu_breadcrumb_alter().
+  if ($settings['set_breadcrumb']) {
+    taxonomy_menu_trails_selected_item_for_breadcrumb($selected_item);
+  }
+  
   // TODO: Remove workaround when Menu Block will remove its
   // _menu_link_get_preferred(). But it's safe to leave it here even after
   // Menu Block update to keep compatibility with old Menu Block releases.
@@ -207,4 +212,76 @@ function _taxonomy_menu_trails_fetch_link_deepest($vars) {
   }
 
   return $selected_item;
+}
+
+/**
+ * Injects selected item and its parents into the breadcrumb.
+ * 
+ * @param array $active_trail
+ * @param array $selected_item
+ *
+ * @todo Simplify function code, probably menu_build_tree() is not necessary
+ *   here and we could just load parents from {menu_links} and translate them.
+ */
+function _taxonomy_menu_trails_menu_breadcrumb_alter(&$active_trail, $selected_item) {
+  // Iterate over menu item parents and collect mlids of current active trail.
+  // Selected item itself is loaded already, we just add it to the end of our
+  // breadcrumb injection.
+  $active_trail_mlids = array();
+  for ($i = 1; $i < $selected_item['depth']; $i++) {
+    $parent = $selected_item["p$i"];
+    $active_trail_mlids[$parent] = $parent;
+  }
+
+  // Build menu tree containing only selected menu item parents.
+  $tree = array();
+  if (!empty($active_trail_mlids)) {
+    $parameters = array(
+      'active_trail' => $active_trail_mlids,
+      'only_active_trail' => TRUE,
+    );
+    $tree = menu_build_tree($selected_item['menu_name'], $parameters);
+  }
+
+  // Flatten menu tree into injection array. This part was copied
+  // from menu_set_active_trail().
+  $injection = array();
+  list($key, $curr) = each($tree);
+  while ($curr) {
+    $link = $curr['link'];
+    if ($link['in_active_trail']) {
+      // Add the link to the trail, unless it links to its parent.
+      if (!($link['type'] & MENU_LINKS_TO_PARENT)) {
+        // The menu tree for the active trail may contain additional links
+        // that have not been translated yet, since they contain dynamic
+        // argument placeholders (%). Such links are not contained in regular
+        // menu trees, and have only been loaded for the additional
+        // translation that happens here, so as to be able to display them in
+        // the breadcumb for the current page.
+        // @see _menu_tree_check_access()
+        // @see _menu_link_translate()
+        if (strpos($link['href'], '%') !== FALSE) {
+          _menu_link_translate($link, TRUE);
+        }
+        if ($link['access']) {
+          $injection[] = $link;
+        }
+      }
+      $tree = $curr['below'] ? $curr['below'] : array();
+    }
+    list($key, $curr) = each($tree);
+  }
+  $injection[] = $selected_item;
+
+  // Inject our active trail to the passed active trail right after the "Home"
+  // link (if any).
+  $trail_start = array();
+  if (!empty($active_trail)) {
+    $first_item = reset($active_trail);
+    $frontpage_hrefs = array('<front>', variable_get('site_frontpage', 'node'));
+    if (in_array($first_item['href'], $frontpage_hrefs)) {
+      $trail_start[] = array_shift($active_trail);
+    }
+  }
+  $active_trail = array_merge($trail_start, $injection, $active_trail);
 }
