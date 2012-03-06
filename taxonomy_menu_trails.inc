@@ -225,10 +225,8 @@ function _taxonomy_menu_trails_fetch_link_deepest($vars) {
  */
 function _taxonomy_menu_trails_menu_breadcrumb_alter(&$active_trail, $selected_item) {
   // Iterate over menu item parents and collect mlids of current active trail.
-  // Selected item itself is loaded already, we just add it to the end of our
-  // breadcrumb injection.
   $active_trail_mlids = array();
-  for ($i = 1; $i < $selected_item['depth']; $i++) {
+  for ($i = 1; $i <= $selected_item['depth']; $i++) {
     $parent = $selected_item["p$i"];
     $active_trail_mlids[$parent] = $parent;
   }
@@ -271,7 +269,6 @@ function _taxonomy_menu_trails_menu_breadcrumb_alter(&$active_trail, $selected_i
     }
     list($key, $curr) = each($tree);
   }
-  $injection[] = $selected_item;
 
   // Inject our active trail to the passed active trail right after the "Home"
   // link (if any).
