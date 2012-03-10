@@ -110,9 +110,14 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
         ),*/
       ),
       'set_breadcrumb' => array(
-        '#type' => 'checkbox',
+        '#type' => 'select',
         '#title' => t('Add active trail to the breadcrumb'),
-        '#description' => t('Menu items from active trail will be inserted to the beginning of default breadcrumb when this option is enabled and the term was chosen. Please disable it if you use any other module to set breadcrumb because it can lead to unwanted behavior in this case.'),
+        '#description' => t('Menu items from active trail will be inserted to the beginning of default breadcrumb when this option is enabled and the term was chosen.'),
+        '#options' => array(
+          0 => t('Never'),
+          'if_empty' => t('When breadcrumb is empty'),
+          'always' => t('Always'),
+        ),
         '#default_value' => $settings['set_breadcrumb'],
       ),
       'tm_integration' => module_exists('taxonomy_menu') ? array(

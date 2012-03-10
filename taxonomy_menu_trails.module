@@ -45,7 +45,7 @@ function _taxonomy_menu_trails_defaults() {
   return array(
     'selection_method' => 'first',
     'only_without_menu' => FALSE,
-    'set_breadcrumb' => TRUE,
+    'set_breadcrumb' => 'if_empty',
     'tm_integration' => module_exists('taxonomy_menu'),
     'instances' => array(),
     'paths_ui' => '',

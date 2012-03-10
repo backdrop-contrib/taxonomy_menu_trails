@@ -110,8 +110,10 @@ function _taxonomy_menu_trails_process($entity, $settings) {
     menu_tree_set_path($selected_item['menu_name'], $selected_item['link_path']);
   }
   
-  // Save selected item for taxonomy_menu_trails_menu_breadcrumb_alter().
-  if ($settings['set_breadcrumb']) {
+  // Save selected item and "set_breadcrumb" setting for
+  // taxonomy_menu_trails_menu_breadcrumb_alter().
+  if (!empty($settings['set_breadcrumb'])) {
+    $selected_item['set_breadcrumb'] = $settings['set_breadcrumb'];
     taxonomy_menu_trails_selected_item_for_breadcrumb($selected_item);
   }
   
@@ -215,6 +217,53 @@ function _taxonomy_menu_trails_fetch_link_deepest($vars) {
 }
 
 /**
+ * Returns list of possible front page paths.
+ *
+ * @return array
+ */
+function _taxonomy_menu_trails_homepage_paths() {
+  return array(
+    '<front>',
+    variable_get('site_frontpage', 'node'),
+  );
+}
+
+/**
+ * Returns TRUE when passed breadcrumb is empty.
+ * 
+ * "Empty" here means there are no items between "Home" (or breadcrumb start)
+ * and current tab root menu item.
+ *
+ * @param array $active_trail
+ *
+ * @return bool
+ */
+function _taxonomy_menu_trails_menu_breadcrumb_is_empty($active_trail) {
+  if (empty($active_trail)) {
+    return TRUE;
+  }
+  
+  // Skip first item if it has homepage href.
+  $first_item = reset($active_trail);
+  $frontpage_hrefs = _taxonomy_menu_trails_homepage_paths();
+  if (in_array($first_item['href'], $frontpage_hrefs)) {
+    array_shift($active_trail);
+  }
+  
+  // Look into the next item (if any) and check if it has current tab root href.
+  $next_item = reset($active_trail);
+  if (empty($next_item)) {
+    return TRUE;
+  }
+  $menu_item = menu_get_item();
+  if ($next_item['href'] == $menu_item['tab_root_href']) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
  * Injects selected item and its parents into the breadcrumb.
  * 
  * @param array $active_trail
@@ -224,6 +273,10 @@ function _taxonomy_menu_trails_fetch_link_deepest($vars) {
  *   here and we could just load parents from {menu_links} and translate them.
  */
 function _taxonomy_menu_trails_menu_breadcrumb_alter(&$active_trail, $selected_item) {
+  if ($selected_item['set_breadcrumb'] == 'if_empty' && !_taxonomy_menu_trails_menu_breadcrumb_is_empty($active_trail)) {
+    return;
+  }
+
   // Iterate over menu item parents and collect mlids of current active trail.
   $active_trail_mlids = array();
   for ($i = 1; $i <= $selected_item['depth']; $i++) {
@@ -231,15 +284,12 @@ function _taxonomy_menu_trails_menu_breadcrumb_alter(&$active_trail, $selected_i
     $active_trail_mlids[$parent] = $parent;
   }
 
-  // Build menu tree containing only selected menu item parents.
-  $tree = array();
-  if (!empty($active_trail_mlids)) {
-    $parameters = array(
-      'active_trail' => $active_trail_mlids,
-      'only_active_trail' => TRUE,
-    );
-    $tree = menu_build_tree($selected_item['menu_name'], $parameters);
-  }
+  // Build menu tree containing only selected menu item itself and its parents.
+  $parameters = array(
+    'active_trail' => $active_trail_mlids,
+    'only_active_trail' => TRUE,
+  );
+  $tree = menu_build_tree($selected_item['menu_name'], $parameters);
 
   // Flatten menu tree into injection array. This part was copied
   // from menu_set_active_trail().
@@ -275,7 +325,7 @@ function _taxonomy_menu_trails_menu_breadcrumb_alter(&$active_trail, $selected_i
   $trail_start = array();
   if (!empty($active_trail)) {
     $first_item = reset($active_trail);
-    $frontpage_hrefs = array('<front>', variable_get('site_frontpage', 'node'));
+    $frontpage_hrefs = _taxonomy_menu_trails_homepage_paths();
     if (in_array($first_item['href'], $frontpage_hrefs)) {
       $trail_start[] = array_shift($active_trail);
     }

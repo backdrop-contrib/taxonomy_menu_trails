@@ -109,6 +109,25 @@ function taxonomy_menu_trails_update_7100() {
 }
 
 /**
+ * Convert breadcrumb settings from early 7.x-2.x-dev versions to current
+ * format.
+ */
+function taxonomy_menu_trails_update_7101() {
+  module_load_include('module', 'taxonomy_menu_trails');
+
+  $types = node_type_get_types();
+  foreach ($types as $type) {
+    list($settings, $var_name) = _taxonomy_menu_trails_get_settings('node', $type->type, FALSE);
+    if (!empty($settings['set_breadcrumb'])
+        && is_numeric($settings['set_breadcrumb'])
+        && $settings['set_breadcrumb'] == 1) {
+      $settings['set_breadcrumb'] = 'if_empty';
+      variable_set($var_name, $settings);
+    }
+  }
+}
+
+/**
  * Implements hook_requirements().
  * 
  * Checks for required API function added in Drupal 7.9 release.
