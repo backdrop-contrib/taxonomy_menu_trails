@@ -97,6 +97,20 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
           ),
         ),*/
       ),
+    );
+
+    if (module_exists('i18n_taxonomy')) {
+      $subform += array(
+        'terms_with_current_language' => array(
+          '#type' => 'checkbox',
+          '#title' => t("Allow only terms with the current language"),
+          '#description' => t("This option will check the taxonomy term language and allow only those terms that are localized into current content language."),
+          '#default_value' => $settings['terms_with_current_language'],
+        ),
+      );
+    }
+
+    $subform += array(
       'only_without_menu' => array(
         '#type' => 'checkbox',
         '#title' => t("Only if @entity doesn't have enabled menu item", array('@entity' => drupal_strtolower($type_info['label']))),

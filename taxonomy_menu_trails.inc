@@ -48,10 +48,22 @@ function _taxonomy_menu_trails_process($entity, $settings) {
     }
   }
 
+  // Filter out terms with different language if this option is enabled.
+  if (module_exists('i18n_taxonomy') && $settings['terms_with_current_language']) {
+    $terms = taxonomy_term_load_multiple($tids);
+    $allowed_languages = array('und', $GLOBALS['language_content']->language);
+    foreach($tids as $index => $tid) {
+      if (empty($terms[$tid]) ||
+          !in_array($terms[$tid]->language, $allowed_languages)) {
+        unset($tids[$index]);
+      }
+    }
+  }
+
   if ($settings['selection_method'] == 'last') {
     $tids = array_reverse($tids);
   }
-
+  
   $vids = array();
   if ($settings['tm_integration']) {
     // Unfortunately, there is no way to get tids-vids map without DB query

@@ -42,7 +42,7 @@ function _taxonomy_menu_trails_get_settings($entity_type, $bundle, $load_default
  * @return array
  */
 function _taxonomy_menu_trails_defaults() {
-  return array(
+  $defaults = array(
     'selection_method' => 'first',
     'only_without_menu' => FALSE,
     'set_breadcrumb' => 'if_empty',
@@ -50,6 +50,12 @@ function _taxonomy_menu_trails_defaults() {
     'instances' => array(),
     'paths_ui' => '',
   );
+  if (module_exists('i18n_taxonomy')) {
+    $defaults += array(
+      'terms_with_current_language' => FALSE,
+    );
+  }
+  return $defaults;
 }
 
 /**
