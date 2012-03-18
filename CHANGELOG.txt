@@ -1,3 +1,7 @@
+Taxonomy Menu Trails 7.x-2.x, xxxx-xx-xx
+----------------------------------------------
+- Issue #1482110 by joseph11: language aware term negotiation
+
 Taxonomy Menu Trails 7.x-2.0, 2012-03-11
 ----------------------------------------------
 - Issue #1413080: compatibility with D7.12+, drop D7.8 and earlier support
