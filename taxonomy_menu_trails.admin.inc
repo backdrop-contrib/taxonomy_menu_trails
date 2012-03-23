@@ -353,8 +353,6 @@ function _taxonomy_menu_trails_delete_instance($instance) {
     else {
       variable_del($var_name);
     }
-    //TODO replace with specific cache entries deleting
-    menu_cache_clear_all();
   }
 }
 
@@ -375,7 +373,5 @@ function taxonomy_menu_trails_overview_form_submit($form, &$state) {
   if ($var_exists) {
     _taxonomy_menu_trails_sort_by_weight($settings['instances'], $entity_type, $bundle);
     variable_set($var_name, $settings);
-    //TODO replace with specific cache entries deleting
-    menu_cache_clear_all();
   }
 }

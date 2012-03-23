@@ -1,6 +1,7 @@
 Taxonomy Menu Trails 7.x-2.x, xxxx-xx-xx
 ----------------------------------------------
 - Issue #1482110 by joseph11: language aware term negotiation
+- Issue #1496374: menu_cache_clear_all() in not needed on 7.x-2.x
 
 Taxonomy Menu Trails 7.x-2.0, 2012-03-11
 ----------------------------------------------
