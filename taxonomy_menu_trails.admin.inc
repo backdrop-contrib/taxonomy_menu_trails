@@ -69,6 +69,18 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
   if (!empty($instances_options)) {
     _taxonomy_menu_trails_sort_by_weight($instances_options, $entity_type, $bundle);
 
+    // Build term path options.
+    $term_path_options = array(
+      'default' => t('Default'),
+      'custom' => t('Custom patterns'),
+      'api' => t('Ask modules using API'),
+    );
+    if (module_exists('taxonomy_menu')) {
+      $term_path_options += array(
+        'tm' => t('Ask Taxonomy Menu'),
+      );
+    }
+
     $subform = array(
       '#tmt_entity' => $entity_type,
       '#tmt_bundle' => $bundle,
@@ -97,20 +109,12 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
           ),
         ),*/
       ),
-    );
-
-    if (module_exists('i18n_taxonomy')) {
-      $subform += array(
-        'terms_with_current_language' => array(
-          '#type' => 'checkbox',
-          '#title' => t("Allow only terms with the current language"),
-          '#description' => t("This option will check the taxonomy term language and allow only those terms that are localized into current content language."),
-          '#default_value' => $settings['terms_with_current_language'],
-        ),
-      );
-    }
-
-    $subform += array(
+      'terms_with_current_language' => module_exists('i18n_taxonomy') ? array(
+        '#type' => 'checkbox',
+        '#title' => t("Allow only terms with the current language"),
+        '#description' => t("This option will check the taxonomy term language and allow only those terms that are localized into current content language."),
+        '#default_value' => $settings['terms_with_current_language'],
+      ) : array(),
       'only_without_menu' => array(
         '#type' => 'checkbox',
         '#title' => t("Only if @entity doesn't have enabled menu item", array('@entity' => drupal_strtolower($type_info['label']))),
@@ -134,20 +138,23 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
         ),
         '#default_value' => $settings['set_breadcrumb'],
       ),
-      'tm_integration' => module_exists('taxonomy_menu') ? array(
-        '#type' => 'checkbox',
-        '#title' => t("Get term's path from Taxonomy Menu modules"),
-        '#description' => t("If you've configured non-default paths for menu items in the Taxonomy Menu, module will use them. Turning this option on will reduce site performance a bit too."),
-        '#default_value' => $settings['tm_integration'],
-        /*TODO also depends on http://drupal.org/node/1057748
+      'term_path' => array(
+        '#type' => 'select',
+        '#title' => t('Term path'),
+        '#description' => 'See taxonomy_menu_trails.api.php for details about API.',
+        '#options' => $term_path_options,
+        '#default_value' => $settings['term_path'],
+      ),
+      'term_path_patterns' => array(
+        '#type' => 'textarea',
+        '#title' => t('Term path patterns'),
+        '#description' => t("Only [tid] placeholder is available. For complex path patterns use API instead. Default pattern taxonomy/term/[tid] is not included by default."),
+        '#default_value' => implode("\n", $settings['term_path_patterns']),
         '#states' => array(
-          'invisible' => array(
-            'input[name^="taxonomy_menu_trails[instances]"]' => array('checked' => FALSE),
+          'visible' => array(
+            'select[name="taxonomy_menu_trails[term_path]"]' => array('value' => 'custom'),
           ),
-        ),*/
-      ) : array(
-        '#type' => 'value',
-        '#value' => $settings['tm_integration'],
+        ),
       ),
       'paths_ui' => array(
         '#title' => t('Additional path patterns for @entity detection', array('@entity' => drupal_strtolower($type_info['label']))),
@@ -187,8 +194,11 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
 
 /**
  * Validation function for bundle form.
+ *
+ * @todo Skip validation when list of selected fields is empty.
  */
 function taxonomy_menu_trails_bundle_form_validate($form, &$state) {
+  // Validate node path patterns.
   $paths_ui = trim($state['values']['taxonomy_menu_trails']['paths_ui']);
   if (!empty($paths_ui)) {
     $entity_type = $form['taxonomy_menu_trails']['#tmt_entity'];
@@ -204,6 +214,15 @@ function taxonomy_menu_trails_bundle_form_validate($form, &$state) {
       }
     }
   }
+  
+  // Validate term path patterns if custom path is used.
+  if ($state['values']['taxonomy_menu_trails']['term_path'] == 'custom') {
+    $patterns_ui = $state['values']['taxonomy_menu_trails']['term_path_patterns'];
+    $patterns = preg_split('/\R/', $patterns_ui, -1, PREG_SPLIT_NO_EMPTY);
+    if (empty($patterns)) {
+      form_set_error('taxonomy_menu_trails][term_path_patterns', t('At least one term path pattern is required.'));
+    }
+  }
 }
 
 /**
@@ -211,6 +230,7 @@ function taxonomy_menu_trails_bundle_form_validate($form, &$state) {
  * 
  * @param string $paths_ui
  * @param string $entity_type
+ *
  * @return array
  *   Two-dimension array of patterns grouped by placeholder type
  *   (id or title entity key):
@@ -253,6 +273,8 @@ function _taxonomy_menu_trails_compile_path_patterns($paths_ui, $entity_type) {
 
 /**
  * Submit handler for bundle form.
+ *
+ * @todo Skip unnecessary processing when list of selected fields is empty.
  */
 function taxonomy_menu_trails_bundle_form_submit($form, &$state) {
   $entity_type = $form['taxonomy_menu_trails']['#tmt_entity'];
@@ -278,6 +300,17 @@ function taxonomy_menu_trails_bundle_form_submit($form, &$state) {
   unset($all_regexps[$entity_type][$old_bundle]);
   $all_regexps[$entity_type][$new_bundle] = $bundle_regexps;
   variable_set('taxonomy_menu_trails__path_regexps', $all_regexps);
+  
+  // Convert term path pattern into an array if custom pattern was enabled, use
+  // empty array otherwise.
+  if ($state['values']['taxonomy_menu_trails']['term_path'] == 'custom') {
+    $patterns_ui = $state['values']['taxonomy_menu_trails']['term_path_patterns'];
+    $patterns = preg_split('/\R/', $patterns_ui, -1, PREG_SPLIT_NO_EMPTY);
+  }
+  else {
+    $patterns = array();
+  }
+  $state['values']['taxonomy_menu_trails']['term_path_patterns'] = $patterns;
 
   // Process bundle name change and save our settings.
   $new_var_name = 'taxonomy_menu_trails_' . $entity_type . '_' . $new_bundle;

@@ -128,6 +128,25 @@ function taxonomy_menu_trails_update_7101() {
 }
 
 /**
+ * Convert flag which enables integration with Taxonomy Menu to term path type.
+ */
+function taxonomy_menu_trails_update_7201() {
+  module_load_include('module', 'taxonomy_menu_trails');
+
+  $types = node_type_get_types();
+  foreach ($types as $type) {
+    list($settings, $var_name) = _taxonomy_menu_trails_get_settings('node', $type->type, FALSE);
+    if (isset($settings['tm_integration'])) {
+      if (!empty($settings['tm_integration']) && $settings['term_path'] == 'default') {
+        $settings['term_path'] = 'tm';
+      }
+      unset($settings['tm_integration']);
+      variable_set($var_name, $settings);
+    }
+  }
+}
+
+/**
  * Implements hook_requirements().
  * 
  * Checks for required API function added in Drupal 7.9 release.

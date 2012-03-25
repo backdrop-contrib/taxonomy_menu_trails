@@ -46,7 +46,8 @@ function _taxonomy_menu_trails_defaults() {
     'selection_method' => 'first',
     'only_without_menu' => FALSE,
     'set_breadcrumb' => 'if_empty',
-    'tm_integration' => module_exists('taxonomy_menu'),
+    'term_path' => 'default',
+    'term_path_patterns' => array(),
     'instances' => array(),
     'paths_ui' => '',
   );
@@ -163,6 +164,7 @@ function taxonomy_menu_trails_init() {
           }
         }
         if ($has_terms) {
+          $settings['entity_type'] = $entity_type;
           module_load_include('inc', 'taxonomy_menu_trails');
           _taxonomy_menu_trails_process($entity, $settings);
         }

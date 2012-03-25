@@ -8,26 +8,110 @@
  */
 
 /**
- * Returns path for specified term ID and settings.
- *
- * If Taxonomy Menu integration was enabled and is possible now, function will
- * try to get path from it, else it will return default term path.
- *
- * @param integer $tid
- * @param array $settings
- * @param array $vids
- *   Map of term ID to vocabulary ID. It is used for Taxonomy Menu integration
- *   only.
+ * Returns default taxonomy term path.
+ * 
+ * @param int $tid
+ * 
  * @return string
- *   Term path.
  */
-function _taxonomy_menu_trails_get_path($tid, $settings, $vids = array()) {
-  if ($settings['tm_integration'] && module_exists('taxonomy_menu') && isset($vids[$tid])) {
-    return taxonomy_menu_create_path($vids[$tid], $tid);
+function _taxonomy_menu_trails_default_term_path($tid) {
+  return 'taxonomy/term/' . $tid;
+}
+
+/**
+ * Returns paths for specified term IDs.
+ *
+ * @param array $tids
+ * @param object $entity
+ * @param array $settings
+ *
+ * @return array
+ *   Paths for passed tids.
+ */
+function _taxonomy_menu_trails_get_paths($tids, $entity, $settings) {
+  $paths = array();
+  switch ($settings['term_path']) {
+    case 'custom':
+      foreach ($tids as $tid) {
+        $term_paths = str_replace('[tid]', $tid, $settings['term_path_patterns']);
+        $paths = array_merge($paths, $term_paths);
+      }
+      break;
+
+    case 'api':
+      // We have to keep tids order for the final paths array.
+      // First fill paths array with "tid => array()" map.
+      $paths = array_combine($tids, array_fill(0, count($tids), array()));
+
+      // Call hook implementations and fill paths array for each term.
+      $hook = 'taxonomy_menu_trails_get_paths';
+      foreach (module_implements($hook) as $module) {
+        $function = $module . '_' . $hook;
+        if (function_exists($function)) {
+          // Use call_user_func() to force passing arguments by value, not by
+          // reference.
+          $results = call_user_func($function, $tids, $settings['entity_type'], $entity, $settings);
+          if (empty($results) || !is_array($results)) {
+            continue;
+          }
+          
+          foreach ($results as $tid => $term_paths) {
+            if (empty($term_paths)) {
+              continue;
+            }
+            
+            if (is_string($term_paths)) {
+              $paths[$tid][] = $term_paths;
+            }
+            elseif (is_array($term_paths)) {
+              $paths[$tid] = array_merge($paths[$tid], $term_paths);
+            }
+          }
+        }
+      }
+
+      // For terms with empty mappings fallback to default path. For the rest
+      // make sure paths are unique.
+      foreach ($paths as $tid => $term_paths) {
+        if (empty($term_paths)) {
+          $paths[$tid][] = _taxonomy_menu_trails_default_term_path($tid);
+        }
+        else {
+          $paths[$tid] = array_unique($paths[$tid]);
+        }
+      }
+
+      // Merge paths into flat array. The order of tids will be kept.
+      $paths = call_user_func_array('array_merge', $paths);
+      break;
+
+    case 'tm':
+      if (module_exists('taxonomy_menu')) {
+        // Unfortunately, there is no way to get tids-vids map without DB query.
+        // If you know one, please create issue and describe method.
+        $vids = db_select('taxonomy_term_data', 'ttd')
+          ->fields('ttd', array('tid', 'vid'))
+          ->condition('ttd.tid', $tids, 'IN')
+          ->execute()
+          ->fetchAllKeyed();
+        foreach ($tids as $tid) {
+          if (isset($vids[$tid])) {
+            $paths[] = taxonomy_menu_create_path($vids[$tid], $tid);
+          }
+          else {
+            $paths[] = _taxonomy_menu_trails_default_term_path($tid);
+          }
+        }
+        break;
+      }
+      // Fallback to default path when Taxonomy Menu module not exists anymore.
+      
+    default:
+      foreach ($tids as $tid) {
+        $paths[] = _taxonomy_menu_trails_default_term_path($tid);
+      }
   }
-  else {
-    return 'taxonomy/term/' . $tid;
-  }
+  return $paths;
 }
 
 /**
@@ -63,26 +147,12 @@ function _taxonomy_menu_trails_process($entity, $settings) {
   if ($settings['selection_method'] == 'last') {
     $tids = array_reverse($tids);
   }
-  
-  $vids = array();
-  if ($settings['tm_integration']) {
-    // Unfortunately, there is no way to get tids-vids map without DB query
-    // If you know one, please create issue and describe method
-    $vids = db_select('taxonomy_term_data', 'ttd')
-      ->fields('ttd', array('tid', 'vid'))
-      ->condition('ttd.tid', $tids, 'IN')
-      ->execute()
-      ->fetchAllKeyed();
-  }
 
-  $selected_item = FALSE;
-  $paths = array();
-  foreach ($tids as $tid) {
-    $path = _taxonomy_menu_trails_get_path($tid, $settings, $vids);
-    $paths[] = $path;
-  }
+  // Get paths for each tid.
+  $paths = _taxonomy_menu_trails_get_paths($tids, $entity, $settings);
 
   // Retrieve a list of menu names, ordered by preference.
+  // TODO: Is it still necessary?
   $menu_names = menu_get_active_menu_names();
 
   $query = db_select('menu_links', 'ml', array('fetch' => PDO::FETCH_ASSOC));
@@ -100,6 +170,7 @@ function _taxonomy_menu_trails_process($entity, $settings) {
   $query->orderBy('ml.weight', 'ASC');
   $results = $query->execute();
 
+  $selected_item = FALSE;
   $vars = compact('menu_names', 'results', 'paths', 'selected_item');
   switch ($settings['selection_method']) {
     case 'first':
