@@ -102,12 +102,6 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
           'last' => t('Last term'),
           'deepest-in-menu' => t('Deepest in menu'),
         ),
-        /*TODO depends on http://drupal.org/node/1057748
-        '#states' => array(
-          'invisible' => array(
-            'input[name^="taxonomy_menu_trails[instances]"]' => array('checked' => FALSE),
-          ),
-        ),*/
       ),
       'terms_with_current_language' => module_exists('i18n_taxonomy') ? array(
         '#type' => 'checkbox',
@@ -120,12 +114,6 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
         '#title' => t("Only if @entity doesn't have enabled menu item", array('@entity' => drupal_strtolower($type_info['label']))),
         '#description' => t("This option also applies to pages detected with path pattern. You should think twice before turning this option on, because it'll reduce site performance a bit."),
         '#default_value' => $settings['only_without_menu'],
-        /*TODO also depends on http://drupal.org/node/1057748
-        '#states' => array(
-          'invisible' => array(
-            'input[name^="taxonomy_menu_trails[instances]"]' => array('checked' => FALSE),
-          ),
-        ),*/
       ),
       'set_breadcrumb' => array(
         '#type' => 'select',
