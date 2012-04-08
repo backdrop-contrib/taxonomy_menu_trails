@@ -1,9 +1,10 @@
-Taxonomy Menu Trails 7.x-2.x, xxxx-xx-xx
+Taxonomy Menu Trails 7.x-2.1, 2012-04-08
 ----------------------------------------------
 - Issue #1482110 by joseph11: language aware term negotiation
 - Issue #1496374: menu_cache_clear_all() in not needed on 7.x-2.x
 - Issue #1268450 by Berdir: provide hook to allow term path override
 - Issue #1478760: configurable taxonomy term path patterns
+- Skip unnecessary settings processing on bundle form validation/submission
 
 Taxonomy Menu Trails 7.x-2.0, 2012-03-11
 ----------------------------------------------
