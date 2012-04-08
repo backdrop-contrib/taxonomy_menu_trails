@@ -182,12 +182,16 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
 
 /**
  * Validation function for bundle form.
- *
- * @todo Skip validation when list of selected fields is empty.
  */
 function taxonomy_menu_trails_bundle_form_validate($form, &$state) {
+  $values = !empty($state['values']['taxonomy_menu_trails']) ? $state['values']['taxonomy_menu_trails'] : array();
+  $values['instances'] = array_filter($values['instances']);
+  if (empty($values['instances'])) {
+    return;
+  }
+
   // Validate node path patterns.
-  $paths_ui = trim($state['values']['taxonomy_menu_trails']['paths_ui']);
+  $paths_ui = trim($values['paths_ui']);
   if (!empty($paths_ui)) {
     $entity_type = $form['taxonomy_menu_trails']['#tmt_entity'];
     list($id, $title) = _taxonomy_menu_trails_get_entity_type_keys($entity_type);
@@ -204,8 +208,8 @@ function taxonomy_menu_trails_bundle_form_validate($form, &$state) {
   }
   
   // Validate term path patterns if custom path is used.
-  if ($state['values']['taxonomy_menu_trails']['term_path'] == 'custom') {
-    $patterns_ui = $state['values']['taxonomy_menu_trails']['term_path_patterns'];
+  if ($values['term_path'] == 'custom') {
+    $patterns_ui = $values['term_path_patterns'];
     $patterns = preg_split('/\R/', $patterns_ui, -1, PREG_SPLIT_NO_EMPTY);
     if (empty($patterns)) {
       form_set_error('taxonomy_menu_trails][term_path_patterns', t('At least one term path pattern is required.'));
@@ -261,8 +265,6 @@ function _taxonomy_menu_trails_compile_path_patterns($paths_ui, $entity_type) {
 
 /**
  * Submit handler for bundle form.
- *
- * @todo Skip unnecessary processing when list of selected fields is empty.
  */
 function taxonomy_menu_trails_bundle_form_submit($form, &$state) {
   $entity_type = $form['taxonomy_menu_trails']['#tmt_entity'];
@@ -280,43 +282,53 @@ function taxonomy_menu_trails_bundle_form_submit($form, &$state) {
       return;
   }
   
-  // Convert path patterns into regular expressions and save bundle regexps
-  // to regular expressions index containing patterns for all entity types and
-  // bundles.
-  $paths_ui = trim($state['values']['taxonomy_menu_trails']['paths_ui']);
-  $bundle_regexps = _taxonomy_menu_trails_compile_path_patterns($paths_ui, $entity_type);
-  $all_regexps = variable_get('taxonomy_menu_trails__path_regexps', array());
-  unset($all_regexps[$entity_type][$old_bundle]);
-  $all_regexps[$entity_type][$new_bundle] = $bundle_regexps;
-  variable_set('taxonomy_menu_trails__path_regexps', $all_regexps);
-  
-  // Convert term path pattern into an array if custom pattern was enabled, use
-  // empty array otherwise.
-  if ($state['values']['taxonomy_menu_trails']['term_path'] == 'custom') {
-    $patterns_ui = $state['values']['taxonomy_menu_trails']['term_path_patterns'];
-    $patterns = preg_split('/\R/', $patterns_ui, -1, PREG_SPLIT_NO_EMPTY);
-  }
-  else {
-    $patterns = array();
-  }
-  $state['values']['taxonomy_menu_trails']['term_path_patterns'] = $patterns;
-
   // Process bundle name change and save our settings.
-  $new_var_name = 'taxonomy_menu_trails_' . $entity_type . '_' . $new_bundle;
   list($settings, $old_var_name, $var_exists) = _taxonomy_menu_trails_get_settings($entity_type, $old_bundle);
   $values = !empty($state['values']['taxonomy_menu_trails']) ? $state['values']['taxonomy_menu_trails'] : array();
   $settings = array_merge($settings, $values);
   $settings['instances'] = array_filter($settings['instances']);
+
+  // Convert path patterns into regular expressions and save bundle regexps
+  // to regular expressions index containing patterns for all entity types and
+  // bundles.
+  $all_regexps = variable_get('taxonomy_menu_trails__path_regexps', array());
+  unset($all_regexps[$entity_type][$old_bundle]);
   if (!empty($settings['instances'])) {
-    // Sort by instances weight again, because it could be changed since form generation.
-    // We're using old_bundle because renaming did not processed yet (it will be in original handler).
+    $paths_ui = trim($settings['paths_ui']);
+    $bundle_regexps = _taxonomy_menu_trails_compile_path_patterns($paths_ui, $entity_type);
+    if (!empty($bundle_regexps)) {
+      $all_regexps[$entity_type][$new_bundle] = $bundle_regexps;
+    }
+  }
+  variable_set('taxonomy_menu_trails__path_regexps', $all_regexps);
+
+  if (!empty($settings['instances'])) {
+    // Convert term path pattern into an array if custom pattern was enabled, use
+    // empty array otherwise.
+    if ($settings['term_path'] == 'custom') {
+      $patterns_ui = $settings['term_path_patterns'];
+      $patterns = preg_split('/\R/', $patterns_ui, -1, PREG_SPLIT_NO_EMPTY);
+    }
+    else {
+      $patterns = array();
+    }
+    $settings['term_path_patterns'] = $patterns;
+
+    // Sort by instances weight again, because it could be changed since form
+    // generation. We're using old_bundle because renaming is not done yet
+    // (it will be done in original handler).
     _taxonomy_menu_trails_sort_by_weight($settings['instances'], $entity_type, $old_bundle);
     
+    $new_var_name = 'taxonomy_menu_trails_' . $entity_type . '_' . $new_bundle;
     variable_set($new_var_name, $settings);
   }
+
+  // Remove old variable if bundle was changed or no term references selected.
   if ($var_exists && (empty($settings['instances']) || $old_bundle !== $new_bundle)) {
     variable_del($old_var_name);
   }
+
+  // Hide settings from original submit handler to not save them twice.
   unset($state['values']['taxonomy_menu_trails']);
 }
 
