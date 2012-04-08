@@ -281,7 +281,8 @@ function taxonomy_menu_trails_bundle_form_submit($form, &$state) {
   }
   
   // Convert path patterns into regular expressions and save bundle regexps
-  // into regular expressions index containing.
+  // to regular expressions index containing patterns for all entity types and
+  // bundles.
   $paths_ui = trim($state['values']['taxonomy_menu_trails']['paths_ui']);
   $bundle_regexps = _taxonomy_menu_trails_compile_path_patterns($paths_ui, $entity_type);
   $all_regexps = variable_get('taxonomy_menu_trails__path_regexps', array());
