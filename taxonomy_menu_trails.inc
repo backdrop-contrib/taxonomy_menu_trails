@@ -151,8 +151,9 @@ function _taxonomy_menu_trails_process($entity, $settings) {
   // Get paths for each tid.
   $paths = _taxonomy_menu_trails_get_paths($tids, $entity, $settings);
 
-  // Retrieve a list of menu names, ordered by preference.
-  // TODO: Is it still necessary?
+  // Retrieve the list of menu names sorted by preference. This list is used
+  // by menu system to get order of menus and not as a filter, we do the same.
+  // See menu_link_get_preferred().
   $menu_names = menu_get_active_menu_names();
 
   $query = db_select('menu_links', 'ml', array('fetch' => PDO::FETCH_ASSOC));
@@ -161,7 +162,6 @@ function _taxonomy_menu_trails_process($entity, $settings) {
   // Weight must be taken from {menu_links}, not {menu_router}.
   $query->addField('ml', 'weight', 'link_weight');
   $query->fields('m');
-  $query->condition('ml.menu_name', $menu_names, 'IN');
   $query->condition('ml.link_path', $paths, 'IN');
   $query->condition('ml.hidden', '0');
   if ($settings['selection_method'] == 'deepest-in-menu') {
@@ -234,6 +234,11 @@ function _taxonomy_menu_trails_fetch_link_simple($vars) {
     if (!isset($candidates[$candidate['link_path']][$candidate['menu_name']])) {
       $candidate['weight'] = $candidate['link_weight'];
       $candidates[$candidate['link_path']][$candidate['menu_name']] = $candidate;
+
+      // Add any menus not already in the menu name search list.
+      if (!in_array($candidate['menu_name'], $menu_names)) {
+        $menu_names[] = $candidate['menu_name'];
+      }
     }
   }
   
@@ -278,6 +283,11 @@ function _taxonomy_menu_trails_fetch_link_deepest($vars) {
     if (!isset($candidates[$candidate['menu_name']][$candidate['link_path']])) {
       $candidate['weight'] = $candidate['link_weight'];
       $candidates[$candidate['menu_name']][$candidate['link_path']] = $candidate;
+
+      // Add any menus not already in the menu name search list.
+      if (!in_array($candidate['menu_name'], $menu_names)) {
+        $menu_names[] = $candidate['menu_name'];
+      }
     }
   }
   

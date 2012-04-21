@@ -1,3 +1,7 @@
+Taxonomy Menu Trails 7.x-2.x, xxxx-xx-xx
+----------------------------------------------
+- Issue #1501968: set active trail for all menus, including inactive ones
+
 Taxonomy Menu Trails 7.x-2.1, 2012-04-08
 ----------------------------------------------
 - Issue #1482110 by joseph11: language aware term negotiation
