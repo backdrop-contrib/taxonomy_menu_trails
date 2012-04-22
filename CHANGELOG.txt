@@ -1,4 +1,4 @@
-Taxonomy Menu Trails 7.x-2.x, xxxx-xx-xx
+Taxonomy Menu Trails 7.x-2.2, 2012-04-23
 ----------------------------------------------
 - Issue #1501968: set active trail for all menus, including inactive ones
 
