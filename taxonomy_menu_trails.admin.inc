@@ -145,9 +145,9 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
         ),
       ),
       'paths_ui' => array(
-        '#title' => t('Additional path patterns for @entity detection. Enter one pattern per line.', array('@entity' => drupal_strtolower($type_info['label']))),
+        '#title' => t('Additional path patterns for @entity detection', array('@entity' => drupal_strtolower($type_info['label']))),
         '#type' => 'textarea',
-        '#description' => t('By default module is trying to detect @entity at !default_paths. Here you can specify additional paths to detect @entity and set menu trails for it. The "*" character matches any non-empty string, the "%" character matches non-empty string without "/" character. Available placeholders are:<ul><li>[@id] - @entity ID</li><li>[@title] - @entity title</li></ul>Each additional pattern will be tested on each page load, so use it only if you really need this feature.', array(
+        '#description' => t('Enter one pattern per line. By default module is trying to detect @entity at !default_paths. Here you can specify additional paths to detect @entity and set menu trails for it. The "*" character matches any non-empty string, the "%" character matches non-empty string without "/" character. Available placeholders are:<ul><li>[@id] - @entity ID</li><li>[@title] - @entity title</li></ul>Each additional pattern will be tested on each page load, so use it only if you really need this feature.', array(
           '@entity' => drupal_strtolower($type_info['label']),
           '!default_paths' => $default_paths,
           '@id' => $type_info['entity keys']['id'],
