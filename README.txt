@@ -13,3 +13,4 @@ Full documentation
 ------------------
 
 Visit this page for detailed documentation: http://drupal.org/node/1602532
+Please check FAQ before posting issues: http://drupal.org/node/1602684
