@@ -1,3 +1,8 @@
+Taxonomy Menu Trails 7.x-2.3, 2012-07-22
+----------------------------------------------
+Add README.txt
+Issue #1549734: Better compatibility with Menu Breadcrumb module
+
 Taxonomy Menu Trails 7.x-2.2, 2012-04-23
 ----------------------------------------------
 - Issue #1501968: set active trail for all menus, including inactive ones
