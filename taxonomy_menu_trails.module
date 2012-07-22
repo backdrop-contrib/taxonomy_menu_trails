@@ -255,3 +255,22 @@ function taxonomy_menu_trails_menu_breadcrumb_alter(&$active_trail, $item) {
     _taxonomy_menu_trails_menu_breadcrumb_alter($active_trail, $selected_item);
   }
 }
+
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * Moves taxonomy_menu_trails_init() to the beginning of the list before
+ * menu_breadcrumb_init(), so the breadcrumb retrieved by Menu Breadcrumb will
+ * be altered by taxonomy_menu_trails_menu_breadcrumb_alter() using the menu
+ * item selected by taxonomy_menu_trails_init() earlier.
+ *
+ * It is moved even if the Menu Breadcrumb is not enabled, so behavior is not
+ * changed when Menu Breadcrumb is enabled/disabled.
+ */
+function taxonomy_menu_trails_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'init' && isset($implementations['taxonomy_menu_trails'])) {
+    $group = $implementations['taxonomy_menu_trails'];
+    unset($implementations['taxonomy_menu_trails']);
+    $implementations = array('taxonomy_menu_trails' => $group) + $implementations;
+  }
+}
