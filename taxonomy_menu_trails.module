@@ -244,9 +244,6 @@ function taxonomy_menu_trails_selected_item_for_breadcrumb($new_item = NULL) {
  * Implements hook_menu_breadcrumb_alter().
  *
  * Injects selected menu item and its parents into the breadcrumb.
- * 
- * @param type $active_trail
- * @param type $item
  */
 function taxonomy_menu_trails_menu_breadcrumb_alter(&$active_trail, $item) {
   if (drupal_is_front_page()) {
