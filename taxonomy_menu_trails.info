@@ -2,4 +2,4 @@ core           = 7.x
 dependencies[] = taxonomy
 description    = "Changes the menu trail of a currently viewed entity to its related term menu item."
 name           = Taxonomy Menu Trails
-package        = Taxonomy Menu
+package        = Taxonomy menu
