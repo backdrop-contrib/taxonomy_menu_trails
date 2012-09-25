@@ -142,6 +142,11 @@ function _taxonomy_menu_trails_process($entity, $settings) {
         unset($tids[$index]);
       }
     }
+
+    // Exit in case no valid terms left.
+    if (empty($tids)) {
+      return;
+    }
   }
 
   if ($settings['selection_method'] == 'last') {
