@@ -123,11 +123,14 @@ function _taxonomy_menu_trails_get_paths($tids, $entity, $settings) {
 function _taxonomy_menu_trails_process($entity, $settings) {
   $instances = $settings['instances'];
   $tids = array();
+
   //TODO figure out: maybe we have to choose language in term reference fields
   foreach ($instances as $field) {
-    foreach ($entity->$field as $lang => $terms) {
-      foreach ($terms as $term) {
-        $tids[] = $term['tid'];
+    if (!empty($entity->$field)) {
+      foreach ($entity->$field as $lang => $items) {
+        foreach ($items as $item) {
+          $tids[] = $item['tid'];
+        }
       }
     }
   }
