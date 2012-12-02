@@ -87,24 +87,44 @@ function _taxonomy_menu_trails_get_paths($tids, $entity, $settings) {
 
     case 'tm':
       if (module_exists('taxonomy_menu')) {
-        // Unfortunately, there is no way to get tids-vids map without DB query.
-        // If you know one, please create issue and describe method.
-        $vids = db_select('taxonomy_term_data', 'ttd')
-          ->fields('ttd', array('tid', 'vid'))
-          ->condition('ttd.tid', $tids, 'IN')
-          ->execute()
-          ->fetchAllKeyed();
-        foreach ($tids as $tid) {
-          if (isset($vids[$tid])) {
-            $paths[] = taxonomy_menu_create_path($vids[$tid], $tid);
-          }
-          else {
-            $paths[] = _taxonomy_menu_trails_default_term_path($tid);
+        /**
+         * @var string|null $function
+         */
+        $function = NULL;
+        $candidate_functions = array(
+          // 7.x-1.x
+          'taxonomy_menu_create_path',
+
+          // 7.x-2.x
+          'taxonomy_menu_path_get',
+        );
+        foreach ($candidate_functions as $candidate) {
+          if (function_exists($candidate)) {
+            $function = $candidate;
           }
         }
-        break;
+
+        if (isset($function)) {
+          // Unfortunately, there is no way to get tids-vids map without DB query.
+          // If you know one, please create issue and describe method.
+          $vids = db_select('taxonomy_term_data', 'ttd')
+            ->fields('ttd', array('tid', 'vid'))
+            ->condition('ttd.tid', $tids, 'IN')
+            ->execute()
+            ->fetchAllKeyed();
+          foreach ($tids as $tid) {
+            if (isset($vids[$tid])) {
+              $paths[] = $function($vids[$tid], $tid);
+            }
+            else {
+              $paths[] = _taxonomy_menu_trails_default_term_path($tid);
+            }
+          }
+          break;
+        }
       }
-      // Fallback to default path when Taxonomy Menu module not exists anymore.
+      // Fallback to default path when Taxonomy Menu module not exists anymore
+      // or the function returning term path is not defined.
       
     default:
       foreach ($tids as $tid) {

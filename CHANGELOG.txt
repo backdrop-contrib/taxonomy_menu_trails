@@ -1,3 +1,7 @@
+Taxonomy Menu Trails 7.x-2.x, xxxx-xx-xx
+----------------------------------------------
+Issue #1852586: fix compatibility with Taxonomy Menu 7.x-2.x
+
 Taxonomy Menu Trails 7.x-2.4, 2012-10-01
 ----------------------------------------------
 Issue #1313086: change package name to match Taxonomy Menu 7.x-1.3
