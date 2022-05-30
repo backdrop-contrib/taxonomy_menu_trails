@@ -1,17 +1,14 @@
 <?php
-
 /**
  * @file
  * Settings forms alteration for taxonomy_menu_trails.
- *
- * @author Dmitriy.trt      <http://drupal.org/user/329125>
  */
 
 /**
  * Callback for _taxonomy_menu_trails_sort_by_weight().
  */
 function _taxonomy_menu_trails_sort_by_weight_helper($a, $b) {
-  $vars = &drupal_static('_taxonomy_menu_trails_sort_by_weight');
+  $vars = &backdrop_static('_taxonomy_menu_trails_sort_by_weight');
   $a_info = field_info_instance($vars['entity_type'], $a, $vars['bundle']);
   $b_info = field_info_instance($vars['entity_type'], $b, $vars['bundle']);
   return $a_info['widget']['weight'] - $b_info['widget']['weight'];
@@ -25,7 +22,7 @@ function _taxonomy_menu_trails_sort_by_weight_helper($a, $b) {
  * @param string $bundle
  */
 function _taxonomy_menu_trails_sort_by_weight(&$instances, $entity_type, $bundle) {
-  $static = &drupal_static(__FUNCTION__, array());
+  $static = &backdrop_static(__FUNCTION__, array());
   $static = compact('entity_type', 'bundle');
   // make sure fields info is collated already to workaround warning on
   // field creation
@@ -111,7 +108,7 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
       ) : array(),
       'only_without_menu' => array(
         '#type' => 'checkbox',
-        '#title' => t("Only if @entity doesn't have enabled menu item", array('@entity' => drupal_strtolower($type_info['label']))),
+        '#title' => t("Only if @entity doesn't have enabled menu item", array('@entity' => backdrop_strtolower($type_info['label']))),
         '#description' => t("This option also applies to pages detected with path pattern. You should think twice before turning this option on, because it'll reduce site performance a bit."),
         '#default_value' => $settings['only_without_menu'],
       ),
@@ -151,13 +148,13 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
         ),
       ),
       'paths_ui' => array(
-        '#title' => t('Additional path patterns for @entity detection', array('@entity' => drupal_strtolower($type_info['label']))),
+        '#title' => t('Additional path patterns for @entity detection', array('@entity' => backdrop_strtolower($type_info['label']))),
         '#type' => 'textarea',
         '#description' => t('Enter one pattern per line. By default module is trying to detect @entity at !default_paths. Here you can specify additional paths to detect @entity and set menu trails for it. The "*" character matches any non-empty string, the "%" character matches non-empty string without "/" character. Available placeholders are:<ul><li>[@id] - @entity ID</li><li>[@title] - @entity title</li></ul>Each additional pattern will be tested on each page load, so use it only if you really need this feature.', array(
-          '@entity' => drupal_strtolower($type_info['label']),
+          '@entity' => backdrop_strtolower($type_info['label']),
           '!default_paths' => $default_paths,
           '@id' => $type_info['entity keys']['id'],
-          '@title' => $type_info['entity keys']['label'],
+          '@title' => $type_info['label'],
         )),
         '#default_value' => $settings['paths_ui'],
       ),
@@ -297,7 +294,8 @@ function taxonomy_menu_trails_bundle_form_submit($form, &$state) {
   // Convert path patterns into regular expressions and save bundle regexps
   // to regular expressions index containing patterns for all entity types and
   // bundles.
-  $all_regexps = variable_get('taxonomy_menu_trails__path_regexps', array());
+  $config = config('taxonomy_menu_trails.settings');
+  $all_regexps = $config->get('path_regexps');
   unset($all_regexps[$entity_type][$old_bundle]);
   if (!empty($settings['instances'])) {
     $paths_ui = trim($settings['paths_ui']);
@@ -306,7 +304,7 @@ function taxonomy_menu_trails_bundle_form_submit($form, &$state) {
       $all_regexps[$entity_type][$new_bundle] = $bundle_regexps;
     }
   }
-  variable_set('taxonomy_menu_trails__path_regexps', $all_regexps);
+  $config->set('path_regexps', $all_regexps);
 
   if (!empty($settings['instances'])) {
     // Convert term path pattern into an array if custom pattern was enabled, use
@@ -326,13 +324,14 @@ function taxonomy_menu_trails_bundle_form_submit($form, &$state) {
     _taxonomy_menu_trails_sort_by_weight($settings['instances'], $entity_type, $old_bundle);
 
     $new_var_name = 'taxonomy_menu_trails_' . $entity_type . '_' . $new_bundle;
-    variable_set($new_var_name, $settings);
+    $config->set($new_var_name, $settings);
   }
 
   // Remove old variable if bundle was changed or no term references selected.
   if ($var_exists && (empty($settings['instances']) || $old_bundle !== $new_bundle)) {
-    variable_del($old_var_name);
+    $config->clear($old_var_name);
   }
+  $config->save();
 
   // Hide settings from original submit handler to not save them twice.
   unset($state['values']['taxonomy_menu_trails']);
@@ -373,10 +372,10 @@ function taxonomy_menu_trails_field_form_submit($form, &$state) {
     unset($settings['instances'][$field_name]);
   }
   if (!empty($settings['instances'])) {
-    variable_set($var_name, $settings);
+    config_set('taxonomy_menu_trails.settings', $var_name, $settings);
   }
   elseif ($var_exists) {
-    variable_del($var_name);
+    config_clear('taxonomy_menu_trails.settings', $var_name);
   }
 }
 
@@ -388,10 +387,10 @@ function _taxonomy_menu_trails_delete_instance($instance) {
   if ($var_exists) {
     unset($settings['instances'][$instance['field_name']]);
     if (!empty($settings['instances'])) {
-      variable_set($var_name, $settings);
+      config_set('taxonomy_menu_trails.settings', $var_name, $settings);
     }
     else {
-      variable_del($var_name);
+      config_clear('taxonomy_menu_trails.settings', $var_name);
     }
   }
 }
@@ -412,6 +411,6 @@ function taxonomy_menu_trails_overview_form_submit($form, &$state) {
   list($settings, $var_name, $var_exists) = _taxonomy_menu_trails_get_settings($entity_type, $bundle, FALSE);
   if ($var_exists) {
     _taxonomy_menu_trails_sort_by_weight($settings['instances'], $entity_type, $bundle);
-    variable_set($var_name, $settings);
+    config_set('taxonomy_menu_trails.settings', $var_name, $settings);
   }
 }

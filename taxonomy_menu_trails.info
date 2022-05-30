@@ -3,3 +3,5 @@ dependencies[] = taxonomy
 description    = "Changes the menu trail of a currently viewed entity to its related term menu item."
 name           = Taxonomy Menu Trails
 package        = Taxonomy menu
+backdrop = 1.x
+type = module

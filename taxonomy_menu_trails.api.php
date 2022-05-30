@@ -45,7 +45,7 @@ function hook_taxonomy_menu_trails_get_paths($tids, $entity_type, $entity, $sett
       continue;
     }
     
-    switch ($term->vid) {
+    switch ($term->vocabulary) {
       case 123:
         // Some specific vocabulary mapped to a view.
         $paths[$term->tid] = 'path/to/my/view' . $term->tid;

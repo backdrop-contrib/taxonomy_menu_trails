@@ -1,10 +1,7 @@
 <?php
-
 /**
  * @file
  * Changes menu trail of current entity to its term's menu item.
- *
- * @author Dmitriy.trt      <http://drupal.org/user/329125>
  */
 
 /**
@@ -25,7 +22,7 @@
  */
 function _taxonomy_menu_trails_get_settings($entity_type, $bundle, $load_default = TRUE) {
   $var_name = 'taxonomy_menu_trails_' . $entity_type . '_' . $bundle;
-  $settings = variable_get($var_name);
+  $settings = config_get('taxonomy_menu_trails.settings', $var_name);
   $var_exists = !empty($settings);
   if (!empty($settings)) {
     $settings += _taxonomy_menu_trails_defaults();
@@ -99,13 +96,13 @@ function taxonomy_menu_trails_init() {
   if (!empty($entity)) {
     list( , , $bundle) = entity_extract_ids($entity_type, $entity);
     list($settings) = _taxonomy_menu_trails_get_settings($entity_type, $bundle, FALSE);
-    if ($settings['only_without_menu']) {
+    if (!empty($settings['only_without_menu'])) {
       $entity_uri = entity_uri($entity_type, $entity);
       $entity_path = $entity_uri['path'];
     }
   }
   else {
-    $all_regexps = variable_get('taxonomy_menu_trails__path_regexps', array());
+    $all_regexps = config_get('taxonomy_menu_trails.settings', 'path_regexps');
     foreach ($all_regexps as $entity_type => $bundles) {
       foreach ($bundles as $bundle => $placeholders) {
         foreach ($placeholders as $placeholder => $regexps) {
@@ -192,7 +189,7 @@ function taxonomy_menu_trails_form_node_type_form_alter(&$form, &$state) {
   _taxonomy_menu_trails_alter_bundle_form($form, 'node', $form['#node_type']);
   $form['taxonomy_menu_trails']['#group'] = 'additional_settings';
   $form['taxonomy_menu_trails']['#attached'] = array(
-   'js' => array(drupal_get_path('module', 'taxonomy_menu_trails') . '/js/node-type-form.js'),
+   'js' => array(backdrop_get_path('module', 'taxonomy_menu_trails') . '/js/node-type-form.js'),
   );
 }
 
@@ -234,7 +231,7 @@ function taxonomy_menu_trails_form_field_ui_field_overview_form_alter(&$form, &$
  * @return array|null
  */
 function taxonomy_menu_trails_selected_item_for_breadcrumb($new_item = NULL) {
-  $item = &drupal_static(__FUNCTION__);
+  $item = &backdrop_static(__FUNCTION__);
   if (isset($new_item)) {
     $item = $new_item;
   }
@@ -247,7 +244,7 @@ function taxonomy_menu_trails_selected_item_for_breadcrumb($new_item = NULL) {
  * Injects selected menu item and its parents into the breadcrumb.
  */
 function taxonomy_menu_trails_menu_breadcrumb_alter(&$active_trail, $item) {
-  if (drupal_is_front_page()) {
+  if (backdrop_is_front_page()) {
     return;
   }
 
@@ -284,11 +281,11 @@ function taxonomy_menu_trails_module_implements_alter(&$implementations, $hook) 
  */
 function taxonomy_menu_trails_preprocess_menu_link(&$vars) {
   // Fast static cache.
-  static $drupal_static_fast;
-  if (!isset($drupal_static_fast)) {
-    $drupal_static_fast['paths'] =& drupal_static(__FUNCTION__, array());
+  static $backdrop_static_fast;
+  if (!isset($backdrop_static_fast)) {
+    $backdrop_static_fast['paths'] =& backdrop_static(__FUNCTION__, array());
   }
-  $preferred_paths =& $drupal_static_fast['paths'];
+  $preferred_paths =& $backdrop_static_fast['paths'];
 
   // Initialize preferred path for this menu if not yet done.
   $element =& $vars['element'];
@@ -313,4 +310,15 @@ function taxonomy_menu_trails_preprocess_menu_link(&$vars) {
     $vars['element']['#attributes']['class'][] = 'menu-item-preferred';
     $vars['element']['#localized_options']['attributes']['class'][] = 'menu-item-preferred';
   }
+}
+
+/**
+ * Implements hook_config_info().
+ */
+function taxonomy_menu_trails_config_info() {
+  $prefixes['taxonomy_menu_trails.settings'] = array(
+    'label' => t('Taxonomy Menu Trails settings'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
 }

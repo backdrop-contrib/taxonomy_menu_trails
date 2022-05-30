@@ -1,10 +1,7 @@
 <?php
-
 /**
  * @file
  * Processing functions for taxonomy_menu_trails.
- *
- * @author Dmitriy.trt      <http://drupal.org/user/329125>
  */
 
 /**
@@ -105,16 +102,16 @@ function _taxonomy_menu_trails_get_paths($tids, $entity, $settings) {
         }
 
         if (isset($function)) {
-          // Unfortunately, there is no way to get tids-vids map without DB query.
+          // Unfortunately, there is no way to get tids-vocabularys map without DB query.
           // If you know one, please create issue and describe method.
-          $vids = db_select('taxonomy_term_data', 'ttd')
-            ->fields('ttd', array('tid', 'vid'))
+          $vocabularys = db_select('taxonomy_term_data', 'ttd')
+            ->fields('ttd', array('tid', 'vocabulary'))
             ->condition('ttd.tid', $tids, 'IN')
             ->execute()
             ->fetchAllKeyed();
           foreach ($tids as $tid) {
-            if (isset($vids[$tid])) {
-              $paths[] = $function($vids[$tid], $tid);
+            if (isset($vocabularys[$tid])) {
+              $paths[] = $function($vocabularys[$tid], $tid);
             }
             else {
               $paths[] = _taxonomy_menu_trails_default_term_path($tid);
@@ -238,7 +235,7 @@ function _taxonomy_menu_trails_process($entity, $settings) {
   // So, probably it should be here forever or until the next major release.
   if (module_exists('menu_block')) {
     // Also set preferred item for Menu Block module
-    $mb_preferred_links = &drupal_static('_menu_link_get_preferred');
+    $mb_preferred_links = &backdrop_static('_menu_link_get_preferred');
     foreach ($selected_items as $selected_item) {
       $mb_preferred_links[$_GET['q']][$selected_item['menu_name']] = $selected_item;
     }
@@ -363,7 +360,7 @@ function _taxonomy_menu_trails_fetch_link_deepest($vars) {
 function _taxonomy_menu_trails_homepage_paths() {
   return array(
     '<front>',
-    variable_get('site_frontpage', 'node'),
+    config_get('site_frontpage'),
   );
 }
 
@@ -433,7 +430,8 @@ function _taxonomy_menu_trails_menu_breadcrumb_alter(&$active_trail, $selected_i
   // Flatten menu tree into injection array. This part was copied
   // from menu_set_active_trail().
   $injection = array();
-  list($key, $curr) = each($tree);
+  $curr = current($tree);
+  $key = key($tree);
   while ($curr) {
     $link = $curr['link'];
     if ($link['in_active_trail']) {
@@ -456,7 +454,8 @@ function _taxonomy_menu_trails_menu_breadcrumb_alter(&$active_trail, $selected_i
       }
       $tree = $curr['below'] ? $curr['below'] : array();
     }
-    list($key, $curr) = each($tree);
+    $curr = current($tree);
+    $key = key($tree);
   }
 
   // Inject our active trail to the passed active trail right after the "Home"
