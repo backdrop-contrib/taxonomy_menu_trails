@@ -45,10 +45,6 @@ Configure the module for each node type you want to expand the menu:
 Bugs and Feature requests should be reported in the 
 [Issue Queue](https://github.com/backdrop-contrib/taxonomy_menu_trails/issues)
 
-## Upgrade from Drupal 7
-
-A migration path from Drupal 7 is work in progress.
-
 ## Current Maintainers
 
 - Minimally maintained by [Indigoxela](https://github.com/indigoxela)

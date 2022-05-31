@@ -12,5 +12,29 @@ function taxonomy_menu_trails_update_last_removed() {
 }
 
 /**
- * @todo from variable to config.
+ * Move settings from variables to config.
  */
+function taxonomy_menu_trails_update_1000() {
+  $config = config('taxonomy_menu_trails.settings');
+  if (!$config->isNew()) {
+    return;
+  }
+
+  $all_regexps = update_variable_get('taxonomy_menu_trails__path_regexps', array());
+  $config->set('path_regexps', $all_regexps);
+  update_variable_del('taxonomy_menu_trails__path_regexps');
+
+  // Ensure module-provided code is loaded.
+  backdrop_load('module', 'node');
+  backdrop_load('module', 'entity');
+  $node_types = node_type_get_names();
+  foreach ($node_types as $machine_name => $human_name) {
+    $key = 'taxonomy_menu_trails_node_' . $machine_name;
+    $var = update_variable_get($key, FALSE);
+    if ($var) {
+      $config->set($key, $var);
+      update_variable_del($key);
+    }
+  }
+  $config->save();
+}
