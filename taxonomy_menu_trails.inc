@@ -8,8 +8,7 @@
  * Returns default taxonomy term path.
  *
  * @param int $tid
- *
- * @return string
+ *   Numeric term ID.
  */
 function _taxonomy_menu_trails_default_term_path($tid) {
   return 'taxonomy/term/' . $tid;
@@ -19,8 +18,11 @@ function _taxonomy_menu_trails_default_term_path($tid) {
  * Returns paths for specified term IDs.
  *
  * @param array $tids
+ *   Array of numeric term IDs as string.
  * @param object $entity
+ *   Full entity, usually Node.
  * @param array $settings
+ *   This module's settings for this entity bundle.
  *
  * @return array
  *   Paths for passed tids.
@@ -84,9 +86,7 @@ function _taxonomy_menu_trails_get_paths($tids, $entity, $settings) {
 
     case 'tm':
       if (module_exists('taxonomy_menu')) {
-        /**
-         * @var string|null $function
-         */
+        // @var string|null $function
         $function = NULL;
         $candidate_functions = array(
           // 7.x-1.x
@@ -102,8 +102,8 @@ function _taxonomy_menu_trails_get_paths($tids, $entity, $settings) {
         }
 
         if (isset($function)) {
-          // Unfortunately, there is no way to get tids-vocabularys map without DB query.
-          // If you know one, please create issue and describe method.
+          // Unfortunately, there is no way to get tids-vocabularys map without
+          // DB query. If you know one, please create issue and describe method.
           $vocabularys = db_select('taxonomy_term_data', 'ttd')
             ->fields('ttd', array('tid', 'vocabulary'))
             ->condition('ttd.tid', $tids, 'IN')
@@ -135,13 +135,15 @@ function _taxonomy_menu_trails_get_paths($tids, $entity, $settings) {
  * Set active trail to entitie's term selected by method specified in settings.
  *
  * @param object $entity
+ *   The entity object, usually Node.
  * @param array $settings
+ *   This module's settings for this entity bundle.
  */
 function _taxonomy_menu_trails_process($entity, $settings) {
   $instances = $settings['instances'];
   $tids = array();
 
-  //TODO figure out: maybe we have to choose language in term reference fields
+  // @todo Maybe we have to choose language in term reference fields.
   foreach ($instances as $field) {
     if (!empty($entity->$field)) {
       foreach ($entity->$field as $lang => $items) {
@@ -156,7 +158,7 @@ function _taxonomy_menu_trails_process($entity, $settings) {
   if (module_exists('i18n_taxonomy') && $settings['terms_with_current_language']) {
     $terms = taxonomy_term_load_multiple($tids);
     $allowed_languages = array('und', $GLOBALS['language_content']->language);
-    foreach($tids as $index => $tid) {
+    foreach ($tids as $index => $tid) {
       if (empty($terms[$tid]) ||
           !in_array($terms[$tid]->language, $allowed_languages)) {
         unset($tids[$index]);
@@ -203,6 +205,7 @@ function _taxonomy_menu_trails_process($entity, $settings) {
     case 'last':
       $selected_items = _taxonomy_menu_trails_fetch_link_simple($vars);
       break;
+
     case 'deepest-in-menu':
       $selected_items = _taxonomy_menu_trails_fetch_link_deepest($vars);
       break;
@@ -234,7 +237,7 @@ function _taxonomy_menu_trails_process($entity, $settings) {
   // Menu Block update to keep compatibility with old Menu Block releases.
   // So, probably it should be here forever or until the next major release.
   if (module_exists('menu_block')) {
-    // Also set preferred item for Menu Block module
+    // Also set preferred item for Menu Block module.
     $mb_preferred_links = &backdrop_static('_menu_link_get_preferred');
     foreach ($selected_items as $selected_item) {
       $mb_preferred_links[$_GET['q']][$selected_item['menu_name']] = $selected_item;
@@ -243,15 +246,17 @@ function _taxonomy_menu_trails_process($entity, $settings) {
 }
 
 /**
- * Selects menu item using "first" or "last" selection method. There is no
- * difference in these two methods because terms array is reversed in
- * _taxonomy_menu_trails_process() if "last" is used.
+ * Selects menu item using "first" or "last" selection method.
+ *
+ * There is no difference in these two methods because terms array is reversed
+ * in _taxonomy_menu_trails_process() if "last" is used.
  *
  * @param array $vars
  *   Variables map:
  *   - menu_names - active menu names
  *   - results - menu items fetching query results
  *   - paths - paths of terms, order is important
+ *
  * @return array
  *   Selected menu item.
  */
@@ -305,7 +310,8 @@ function _taxonomy_menu_trails_fetch_link_simple($vars) {
  * Selects deepest menu item.
  *
  * @param array $vars
- *   @see _taxonomy_menu_trails_fetch_link_simple()
+ *   See _taxonomy_menu_trails_fetch_link_simple().
+ *
  * @return array
  *   Selected menu item.
  */
@@ -354,8 +360,6 @@ function _taxonomy_menu_trails_fetch_link_deepest($vars) {
 
 /**
  * Returns list of possible front page paths.
- *
- * @return array
  */
 function _taxonomy_menu_trails_homepage_paths() {
   return array(
@@ -371,8 +375,7 @@ function _taxonomy_menu_trails_homepage_paths() {
  * and current tab root menu item.
  *
  * @param array $active_trail
- *
- * @return bool
+ *   The current breadcrumb trail.
  */
 function _taxonomy_menu_trails_menu_breadcrumb_is_empty($active_trail) {
   if (empty($active_trail)) {
@@ -403,7 +406,9 @@ function _taxonomy_menu_trails_menu_breadcrumb_is_empty($active_trail) {
  * Injects selected item and its parents into the breadcrumb.
  *
  * @param array $active_trail
+ *   The currently active breadcrumb trail.
  * @param array $selected_item
+ *   Menu router item.
  *
  * @todo Simplify function code, probably menu_build_tree() is not necessary
  *   here and we could just load parents from {menu_links} and translate them.

@@ -18,14 +18,17 @@ function _taxonomy_menu_trails_sort_by_weight_helper($a, $b) {
  * Sorts instances array by its weight fetched from field info API.
  *
  * @param array $instances
+ *   Field instance definition.
  * @param string $entity_type
+ *   The entity type, usually "node".
  * @param string $bundle
+ *   The entity bundle, for instance "post" or "page".
  */
 function _taxonomy_menu_trails_sort_by_weight(&$instances, $entity_type, $bundle) {
   $static = &backdrop_static(__FUNCTION__, array());
   $static = compact('entity_type', 'bundle');
-  // make sure fields info is collated already to workaround warning on
-  // field creation
+  // Make sure fields info is collated already to workaround warning on
+  // field creation.
   _field_info_collate_fields();
   uksort($instances, '_taxonomy_menu_trails_sort_by_weight_helper');
   $static = array();
@@ -35,8 +38,11 @@ function _taxonomy_menu_trails_sort_by_weight(&$instances, $entity_type, $bundle
  * Add Taxonomy Menu Trails settings to bundle form.
  *
  * @param array $form
+ *   The Backdrop form.
  * @param string $entity_type
+ *   The entity type, usually "node".
  * @param mixed $bundle
+ *   The bundle, for instance "post" or "page".
  */
 function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) {
   $bundle = field_extract_bundle($entity_type, $bundle);
@@ -163,15 +169,15 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
     // Add validation function.
     $form['#validate'][] = 'taxonomy_menu_trails_bundle_form_validate';
 
-    // Add our submit function before default handler because
-    // we don't want our elements to be saved as persistent variables
-    // by default node type submit handler
+    // Add our submit function before default handler because we don't want our
+    // elements to be saved as persistent variables by default node type submit
+    // handler.
     array_unshift($form['#submit'], 'taxonomy_menu_trails_bundle_form_submit');
   }
   else {
     $subform = array(
       'notice' => array(
-        '#markup' => '<p>' . t('Add some "Term reference" fields to use Taxonomy Menu Trails.') . '</p>'
+        '#markup' => '<p>' . t('Add some "Term reference" fields to use Taxonomy Menu Trails.') . '</p>',
       ),
     );
   }
@@ -224,7 +230,9 @@ function taxonomy_menu_trails_bundle_form_validate($form, &$state) {
  * Converts entity path patterns from user input into regular expressions.
  *
  * @param string $paths_ui
+ *   Additional path patterns provided via user interface.
  * @param string $entity_type
+ *   The entity type, usually "node".
  *
  * @return array
  *   Two-dimension array of patterns grouped by placeholder type
@@ -241,7 +249,7 @@ function _taxonomy_menu_trails_compile_path_patterns($paths_ui, $entity_type) {
       if (preg_match('/^(.*)\[(' . preg_quote($id) . '|' . preg_quote($title) . ')\](.*)$/u', $pattern, $matches)) {
         // Escape parts before and after id/title placeholders. Also, convert
         // "*" and "%" special characters into regular expressions.
-        foreach (array(1,3) as $index) {
+        foreach (array(1, 3) as $index) {
           $matches[$index] = str_replace(array('\\*', '%'), array('.+', '[^\/]+'), preg_quote($matches[$index], '/'));
         }
 
@@ -307,8 +315,8 @@ function taxonomy_menu_trails_bundle_form_submit($form, &$state) {
   $config->set('path_regexps', $all_regexps);
 
   if (!empty($settings['instances'])) {
-    // Convert term path pattern into an array if custom pattern was enabled, use
-    // empty array otherwise.
+    // Convert term path pattern into an array if custom pattern was enabled,
+    // use empty array otherwise.
     if ($settings['term_path'] == 'custom') {
       $patterns_ui = $settings['term_path_patterns'];
       $patterns = preg_split('/\R/', $patterns_ui, -1, PREG_SPLIT_NO_EMPTY);
@@ -403,7 +411,9 @@ function _taxonomy_menu_trails_alter_overview_form(&$form) {
 }
 
 /**
- * Submit handler for fields overview form. Sorts instances and saves bundle settings.
+ * Submit handler for fields overview form.
+ *
+ * Sorts instances and saves bundle settings.
  */
 function taxonomy_menu_trails_overview_form_submit($form, &$state) {
   $entity_type = $form['#entity_type'];

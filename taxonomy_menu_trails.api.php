@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * API documentation for taxonomy_menu_trails.
+ */
 
 /**
  * Map taxonomy term ids to their paths.
@@ -44,7 +48,7 @@ function hook_taxonomy_menu_trails_get_paths($tids, $entity_type, $entity, $sett
       );
       continue;
     }
-    
+
     switch ($term->vocabulary) {
       case 123:
         // Some specific vocabulary mapped to a view.
@@ -59,7 +63,7 @@ function hook_taxonomy_menu_trails_get_paths($tids, $entity_type, $entity, $sett
         // Map the rest to some default view.
         $paths[$term->tid] = 'path/to/default/view/' . $term->tid;
     }
-    
+
   }
   return $paths;
 }
