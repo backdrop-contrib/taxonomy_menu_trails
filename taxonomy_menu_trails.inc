@@ -155,12 +155,12 @@ function _taxonomy_menu_trails_process($entity, $settings) {
   }
 
   // Filter out terms with different language if this option is enabled.
-  if (module_exists('i18n_taxonomy') && $settings['terms_with_current_language']) {
+  if (module_exists('language') && $settings['terms_with_current_language']) {
     $terms = taxonomy_term_load_multiple($tids);
-    $allowed_languages = array('und', $GLOBALS['language_content']->language);
+    $allowed_languages = array('und', $GLOBALS['language_content']->langcode);
     foreach ($tids as $index => $tid) {
       if (empty($terms[$tid]) ||
-          !in_array($terms[$tid]->language, $allowed_languages)) {
+          !in_array($terms[$tid]->langcode, $allowed_languages)) {
         unset($tids[$index]);
       }
     }

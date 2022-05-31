@@ -53,7 +53,7 @@ function _taxonomy_menu_trails_defaults() {
     'paths_ui' => '',
     'trail_per_menu' => FALSE,
   );
-  if (module_exists('i18n_taxonomy')) {
+  if (module_exists('language')) {
     $defaults += array(
       'terms_with_current_language' => FALSE,
     );

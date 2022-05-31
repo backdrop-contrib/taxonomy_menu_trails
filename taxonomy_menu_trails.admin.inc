@@ -106,7 +106,7 @@ function _taxonomy_menu_trails_alter_bundle_form(&$form, $entity_type, $bundle) 
           'deepest-in-menu' => t('Deepest in menu'),
         ),
       ),
-      'terms_with_current_language' => module_exists('i18n_taxonomy') ? array(
+      'terms_with_current_language' => module_exists('language') ? array(
         '#type' => 'checkbox',
         '#title' => t("Allow only terms with the current language"),
         '#description' => t("This option will check the taxonomy term language and allow only those terms that are localized into current content language."),
