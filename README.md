@@ -1,5 +1,12 @@
 # Taxonomy Menu Trails
 
+Toggle the active trail of menus with taxonomy term items based on terms attached
+to content. Also sets the active breadcrumb trail.
+
+Plays nicely with
+ [Taxonomy Menu](https://backdropcms.org/project/taxonomy_menu), but that
+ module's not required.
+
 You need this module if you have a nested menu tree with taxonomy terms, e.g.:
 
 ```
